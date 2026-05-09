@@ -1,0 +1,26 @@
+
+# 2026-05-10 00:49:51.873827
++You are working on Linear issue NEX-8: Add usage example
++
++Description:
++在 README.md 末尾追加一段 ## Usage 后面写：To use, run
++
++python [script.py](<http://script.py>)
++
++Implement the requested changes by editing files in the current repository.
++Do not run any commands, do not create commits — the orchestrator handles git.
++Stay narrowly within the requested scope.
++
+
+# 2026-05-10 00:49:51.873959
++You are working on Linear issue NEX-8: Add usage example
++
++Description:
++在 README.md 末尾追加一段 ## Usage 后面写：To use, run
++
++python [script.py](<http://script.py>)
++
++Implement the requested changes by editing files in the current repository.
++Do not run any commands, do not create commits — the orchestrator handles git.
++Stay narrowly within the requested scope.
++
