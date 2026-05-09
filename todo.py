@@ -54,6 +54,8 @@ class Store:
         new_tasks = [t for t in tasks if t.id != task_id]
         if len(new_tasks) == len(tasks):
             return False
+        for i, t in enumerate(new_tasks, 1):
+            t.id = i
         self._save(new_tasks)
         return True
 
@@ -82,7 +84,7 @@ def main(argv=None):
     elif args.cmd == "list":
         for t in store.list():
             mark = "[x]" if t.done else "[ ]"
-            print(f"{mark} #{t.id} {t.title}")
+            print(f"#{t.id}  {mark}  {t.title}")
     elif args.cmd == "done":
         if not store.done(args.id):
             print("not found", file=sys.stderr)
