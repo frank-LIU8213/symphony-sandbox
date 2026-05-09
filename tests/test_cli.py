@@ -2,6 +2,7 @@
 import pytest
 from unittest.mock import patch
 from todo.cli import main
+from todo.store import Store
 
 
 @pytest.fixture
@@ -12,9 +13,10 @@ def db_path(tmp_path):
 
 
 def test_list_output_format(db_path, capsys):
-    main(["add", "buy milk"])
-    main(["add", "walk dog"])
-    main(["done", "2"])
+    store = Store(db_path)
+    store.add("buy milk")
+    store.add("walk dog")
+    store.done(2)
     main(["list"])
     captured = capsys.readouterr()
     lines = captured.out.strip().split("\n")
@@ -34,8 +36,9 @@ def test_add_with_priority_and_tags(db_path, capsys):
 
 
 def test_search(db_path, capsys):
-    main(["add", "Buy Milk"])
-    main(["add", "Walk Dog"])
+    store = Store(db_path)
+    store.add("Buy Milk")
+    store.add("Walk Dog")
     main(["search", "milk"])
     captured = capsys.readouterr()
     lines = captured.out.strip().split("\n")
@@ -44,8 +47,9 @@ def test_search(db_path, capsys):
 
 
 def test_filter_priority(db_path, capsys):
-    main(["add", "--priority", "high", "task1"])
-    main(["add", "--priority", "low", "task2"])
+    store = Store(db_path)
+    store.add("task1", priority="high")
+    store.add("task2", priority="low")
     main(["filter", "--priority", "high"])
     captured = capsys.readouterr()
     lines = captured.out.strip().split("\n")
@@ -54,8 +58,9 @@ def test_filter_priority(db_path, capsys):
 
 
 def test_filter_tag(db_path, capsys):
-    main(["add", "--tag", "work", "task1"])
-    main(["add", "--tag", "personal", "task2"])
+    store = Store(db_path)
+    store.add("task1", tags=["work"])
+    store.add("task2", tags=["personal"])
     main(["filter", "--tag", "work"])
     captured = capsys.readouterr()
     lines = captured.out.strip().split("\n")
