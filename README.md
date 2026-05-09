@@ -10,11 +10,13 @@ A tiny single-file Python CLI for managing a personal todo list.
 ## Usage
 
 ```sh
-python todo.py add "buy milk"
-python todo.py add "walk dog"
-python todo.py list
-python todo.py done 1
-python todo.py rm 2
+python -m todo add "buy milk"
+python -m todo add --priority high --tag work --tag urgent "walk dog"
+python -m todo list
+python -m todo done 1
+python -m todo rm 2
+python -m todo search milk
+python -m todo filter --priority high --tag work
 ```
 
 Tasks are stored in `~/.todo.json`.
