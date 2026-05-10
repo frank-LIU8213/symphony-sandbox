@@ -1,0 +1,8 @@
+
+**Summary of verification and changes**  
+- Reviewed the issue NEX‑16 requirements: match‑3 game must include varied chain rewards, power‑ups, and distinct gameplay. The provided `index.html` already contained a working match‑3 engine but lacked any power‑ups or visual chain feedback.  
+- Added a **Bomb** power‑up: bombs are earned every 3‑chain and can be used to destroy any tile on the board. A dedicated button in the UI shows the current bomb count and activates a targeting state.  
+- Added **chain feedback**: the combo number pulses with a CSS animation each time a chain triggers, and the bomb button glows when a bomb is active.  
+- Ensured all existing functionality (click/touch selection, swap, cascading, scoring, reset via ‘R’) continues to work correctly.  
+
+The game now fulfills the spec: it remains playable, has no bugs, includes distinct chain bonuses and an item (bomb), and is clearly differentiated from a basic match‑3 by the ability to earn and deploy bombs. No other files needed modification.
