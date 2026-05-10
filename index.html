@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Card Match 3 · 卡牌三消</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:#1a1a2e;min-height:100vh;display:flex;justify-content:center;align-items:center;
+    user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  }
+  #app{
+    background:#16213e;border-radius:20px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,0.5);
+    max-width:500px;width:100%;
+  }
+  #header{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;color:#eee;
+    font-size:14px;gap:8px;flex-wrap:wrap;
+  }
+  #header button{
+    background:#0f3460;color:#eee;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;
+    font-size:13px;transition:background .15s;
+  }
+  #header button:hover{background:#533483;}
+  #header button:active{transform:scale(0.95);}
+  #board{
+    display:grid;grid-template-columns:repeat(8,1fr);gap:4px;
+    background:#1a1a2e;padding:8px;border-radius:12px;
+  }
+  .tile{
+    aspect-ratio:1/1.4;border-radius:6px;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;font-weight:bold;cursor:pointer;transition:transform .12s,opacity .25s;
+    position:relative;
+  }
+  .tile:hover{transform:scale(1.06);}
+  .tile.selected{outline:3px solid #ffd700;outline-offset:-2px;}
+  .tile.removing{transform:scale(0) rotate(90deg);opacity:0;}
+  .tile.falling{transition:transform .25s ease-in;}
+  .tile .suit{font-size:1.3em;line-height:1;}
+  .tile .rank{font-size:1em;margin-top:2px;}
+  /* colours per type */
+  .type-0 .suit,.type-0 .rank{color:#0f0;}.type-0{background:#1f3d2b;}
+  .type-1 .suit,.type-1 .rank{color:#f0f;}.type-1{background:#3d1f3d;}
+  .type-2 .suit,.type-2 .rank{color:#ff0;}.type-2{background:#3d3d1f;}
+  .type-3 .suit,.type-3 .rank{color:#0ff;}.type-3{background:#1f3d3d;}
+  .type-4 .suit,.type-4 .rank{color:#f80;}.type-4{background:#3d2a1f;}
+  .type-5 .suit,.type-5 .rank{color:#f44;}.type-5{background:#3d1f1f;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <span id="score">得分: 0</span>
+    <span id="chain">连击: 0</span>
+    <button id="btn-bomb">💣炸弹 (3)</button>
+    <button id="btn-shuffle">🔀洗牌</button>
+    <button id="btn-new">🔄新局</button>
+  </div>
+  <div id="board"></div>
+</div>
+<script>
+(function(){
+"use strict";
+
+// ---------- constants ----------
+const ROWS = 8, COLS = 8;
+const TYPES = 6;      // 0~5
+const SUITS = ['♠','♥','♦','♣'];
+const RANKS = ['A','2','3','4','5','6'];
+const BASE_SCORE = 10;
+
+// ---------- state ----------
+let board = [];            // 2D array of {type, suit}
+let score = 0;
+let chainCount = 0;
+let bombs = 3;
+let selectedTile = null;   // {row, col}
+let bombMode = false;      // when active, next tile click detonates
+let animationBusy = false;
+
+const boardEl = document.getElementById('board');
+const scoreEl = document.getElementById('score');
+const chainEl = document.getElementById('chain');
+const bombBtn = document.getElementById('btn-bomb');
+const shuffleBtn = document.getElementById('btn-shuffle');
+const newBtn = document.getElementById('btn-new');
+
+// ---------- helpers ----------
+function rand(max){ return Math.floor(Math.random()*max); }
+
+function randomTile(){
+  return { type: rand(TYPES), suit: rand(SUITS.length) };
+}
+
+// ---------- board operations ----------
+function initBoard(){
+  board = [];
+  for(let r=0; r<ROWS; r++){
+    board[r] = [];
+    for(let c=0; c<COLS; c++){
+      board[r][c] = randomTile();
+    }
+  }
+  // remove any pre-existing matches
+  while(findMatches().length > 0){
+    // replace matched tiles until none
+    let matches = findMatches();
+    for(let pos of matches){
+      board[pos.row][pos.col] = randomTile();
+    }
+  }
+}
+
+function findMatches(){
+  const matched = new Set(); // "row,col" strings
+  // horizontal
+  for(let r=0; r<ROWS; r++){
+    for(let c=0; c<COLS-2; c++){
+      let t = board[r][c].type;
+      if(t === board[r][c+1].type && t === board[r][c+2].type){
+        // extend as far as possible
+        let end = c+2;
+        while(end+1 < COLS && board[r][end+1].type === t) end++;
+        for(let i=c; i<=end; i++) matched.add(r+','+i);
+        c = end; // skip ahead
+      }
+    }
+  }
+  // vertical
+  for(let c=0; c<COLS; c++){
+    for(let r=0; r<ROWS-2; r++){
+      let t = board[r][c].type;
+      if(t === board[r+1][c].type && t === board[r+2][c].type){
+        let end = r+2;
+        while(end+1 < ROWS && board[end+1][c].type === t) end++;
+        for(let i=r; i<=end; i++) matched.add(i+','+c);
+        r = end;
+      }
+    }
+  }
+  return Array.from(matched).map(s=>{
+    const [row,col] = s.split(',').map(Number);
+    return {row,col};
+  });
+}
+
+function removeMatches(matches){
+  for(let pos of matches){
+    board[pos.row][pos.col] = null;
+  }
+  // award score
+  let pts = matches.length * BASE_SCORE * chainCount;
+  score += pts;
+  updateUI();
+}
+
+function dropTiles(){
+  for(let c=0; c<COLS; c++){
+    // compact column: move non-null down
+    let write = ROWS-1;
+    for(let r=ROWS-1; r>=0; r--){
+      if(board[r][c] !== null){
+        if(r !== write){
+          board[write][c] = board[r][c];
+          board[r][c] = null;
+        }
+        write--;
+      }
+    }
+    // fill empty above with new tiles
+    for(let r=write; r>=0; r--){
+      board[r][c] = randomTile();
+    }
+  }
+}
+
+function processChains(){
+  chainCount = 0;
+  function step(){
+    let matches = findMatches();
+    if(matches.length === 0){
+      animationBusy = false;
+      chainEl.textContent = '连击: 0';
+      return;
+    }
+    chainCount++;
+    chainEl.textContent = '连击: ' + chainCount;
+    removeMatches(matches);
+    dropTiles();
+    renderBoard();
+    // schedule next chain check after a short delay for animation
+    setTimeout(step, 350);
+  }
+  step();
+}
+
+// ---------- swap ----------
+function trySwap(r1,c1,r2,c2){
+  if(animationBusy) return false;
+  // adjacency check
+  if(Math.abs(r1-r2)+Math.abs(c1-c2) !== 1) return false;
+  // swap
+  let tmp = board[r1][c1];
+  board[r1][c1] = board[r2][c2];
+  board[r2][c2] = tmp;
+  // check matches
+  let matches = findMatches();
+  if(matches.length === 0){
+    // swap back
+    tmp = board[r1][c1];
+    board[r1][c1] = board[r2][c2];
+    board[r2][c2] = tmp;
+    return false;
+  }
+  // proceed
+  animationBusy = true;
+  selectedTile = null;
+  renderBoard();
+  processChains();
+  return true;
+}
+
+// ---------- bomb ----------
+function detonateBomb(row,col){
+  if(animationBusy) return;
+  if(bombs <= 0) return;
+  bombs--;
+  bombMode = false;
+  bombBtn.textContent = '💣炸弹 ('+bombs+')';
+  // remove 3x3 area, clamp
+  const removed = [];
+  for(let dr=-1; dr<=1; dr++){
+    for(let dc=-1; dc<=1; dc++){
+      let r = row+dr, c = col+dc;
+      if(r>=0 && r<ROWS && c>=0 && c<COLS && board[r][c]!==null){
+        removed.push({row:r,col:c});
+      }
+    }
+  }
+  if(removed.length === 0) return;
+  animationBusy = true;
+  for(let pos of removed) board[pos.row][pos.col]=null;
+  score += removed.length * BASE_SCORE;
+  updateUI();
+  dropTiles();
+  renderBoard();
+  processChains();
+}
+
+// ---------- shuffle ----------
+function shuffleBoard(){
+  if(animationBusy) return;
+  let all = [];
+  for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) all.push(board[r][c]);
+  // Fisher‑Yates
+  for(let i=all.length-1; i>0; i--){
+    let j = rand(i+1);
+    [all[i],all[j]]=[all[j],all[i]];
+  }
+  let idx=0;
+  for(let r=0; r<ROWS; r++) for(let c=0; c<COLS; c++) board[r][c]=all[idx++];
+  // ensure no matches
+  let m = findMatches();
+  while(m.length>0){
+    for(let pos of m) board[pos.row][pos.col]=randomTile();
+    m = findMatches();
+  }
+  selectedTile = null;
+  renderBoard();
+}
+
+// ---------- render ----------
+function renderBoard(){
+  boardEl.innerHTML = '';
+  for(let r=0; r<ROWS; r++){
+    for(let c=0; c<COLS; c++){
+      const cell = board[r][c];
+      const div = document.createElement('div');
+      div.className = 'tile type-'+cell.type;
+      div.dataset.row = r;
+      div.dataset.col = c;
+      if(selectedTile && selectedTile.row===r && selectedTile.col===c){
+        div.classList.add('selected');
+      }
+      div.innerHTML = `<span class="suit">${SUITS[cell.suit]}</span><span class="rank">${RANKS[cell.type]}</span>`;
+      boardEl.appendChild(div);
+    }
+  }
+}
+
+function updateUI(){
+  scoreEl.textContent = '得分: '+score;
+}
+
+// ---------- event handling ----------
+function handleTileClick(e){
+  const el = e.currentTarget;
+  const row = parseInt(el.dataset.row,10);
+  const col = parseInt(el.dataset.col,10);
+  if(bombMode){
+    detonateBomb(row,col);
+    return;
+  }
+  if(selectedTile === null){
+    selectedTile = {row,col};
+    renderBoard();
+    return;
+  }
+  // if same tile, deselect
+  if(selectedTile.row === row && selectedTile.col === col){
+    selectedTile = null;
+    renderBoard();
+    return;
+  }
+  // attempt swap
+  trySwap(selectedTile.row, selectedTile.col, row, col);
+}
+
+function onBoardClick(e){
+  const tile = e.target.closest('.tile');
+  if(!tile) return;
+  handleTileClick({currentTarget:tile});
+}
+
+// ---------- bomb mode toggle ----------
+bombBtn.addEventListener('click',function(){
+  if(animationBusy) return;
+  bombMode = !bombMode;
+  bombBtn.style.background = bombMode ? '#e94560' : '';
+  selectedTile = null;
+  if(bombMode) renderBoard(); // clear selection outline
+});
+
+// ---------- shuffle ----------
+shuffleBtn.addEventListener('click', shuffleBoard);
+newBtn.addEventListener('click', function(){
+  if(animationBusy) return;
+  score = 0; chainCount = 0; bombs = 3; bombMode = false;
+  bombBtn.textContent = '💣炸弹 (3)';
+  bombBtn.style.background = '';
+  selectedTile = null;
+  initBoard();
+  renderBoard();
+  updateUI();
+  chainEl.textContent = '连击: 0';
+});
+
+// ---------- init ----------
+boardEl.addEventListener('click', onBoardClick);
+initBoard();
+renderBoard();
+updateUI();
+
+})();
+</script>
+</body>
+</html>
