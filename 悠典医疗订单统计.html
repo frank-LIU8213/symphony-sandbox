@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>悠典医疗 · 订单统计</title>
+<!-- Use ECharts for charts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  /* ======== 全局重置 & 基础 ======== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html {
+    background: linear-gradient(135deg, #F2F2F2 0%, #FFF4D6 100%);
+  }
+  body {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 48px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1A1A1A;
+    background: transparent;
+    min-height: 100vh;
+  }
+
+  /* 主容器 – 大圆角白底 + 柔和阴影 */
+  .dashboard {
+    background: #fff;
+    border-radius: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+    padding: 32px 36px;
+  }
+
+  /* ======== Header ======== */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+  .logo {
+    font-size: 20px;
+    font-weight: 300;
+    color: #1A1A1A;
+    border: 1px solid #D0D0D0;
+    border-radius: 20px;
+    padding: 8px 16px;
+    text-decoration: none;
+  }
+  .nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .nav-item {
+    font-size: 14px;
+    font-weight: 400;
+    color: #1A1A1A;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: default;
+  }
+  .nav-item.active {
+    background: #2B2B2B;
+    color: #fff;
+    font-weight: 500;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .setting-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #F9F9F9;
+    border: 1px solid #E0E0E0;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #1A1A1A;
+  }
+  .icon-bell {
+    width: 36px; height: 36px;
+    background: #F9F9F9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .icon-bell::after {
+    content: '';
+    width: 8px; height: 8px;
+    background: #FFD166;
+    border-radius: 50%;
+    position: absolute;
+    top: 6px; right: 6px;
+  }
+  .avatar {
+    width: 36px; height: 36px;
+    background: #F9F9F9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #999;
+  }
+
+  /* ======== Welcome & Stats ======== */
+  .welcome-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+  }
+  .welcome-left {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .welcome-title {
+    font-size: 40px;
+    font-weight: 300;
+    color: #1A1A1A;
+  }
+  .progress-group {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .progress-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .progress-item label {
+    font-size: 12px;
+    color: #1A1A1A;
+  }
+  .bar {
+    height: 28px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    min-width: 80px;
+  }
+  .bar.dark { background: #2B2B2B; }
+  .bar.yellow { background: #FFD166; color: #1A1A1A; }
+  .bar.striped { background: repeating-linear-gradient(45deg, #E0E0E0, #E0E0E0 4px, #fff 4px, #fff 8px); color: #1A1A1A; }
+  .bar.outline { background: #fff; border: 1px solid #D0D0D0; color: #1A1A1A; }
+
+  .stats-group {
+    display: flex;
+    gap: 40px;
+    align-items: flex-end;
+  }
+  .stat-number {
+    font-size: 48px;
+    font-weight: 300;
+    color: #1A1A1A;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stat-icon {
+    width: 20px; height: 20px;
+    background: #E0E0E0;
+    border-radius: 4px;
+  }
+
+  /* ======== 中间 Grid (2×2) ======== */
+  .grid-2x2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1A1A1A;
+  }
+  .card-link {
+    width: 28px; height: 28px;
+    background: #F5F5F5;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #999;
+  }
+
+  /* Profile card */
+  .profile-img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 20px;
+    margin-bottom: 8px;
+  }
+  .profile-name {
+    font-size: 18px;
+    font-weight: 500;
+    color: #1A1A1A;
+  }
+  .profile-role {
+    font-size: 12px;
+    color: #666;
+  }
+  .profile-badge {
+    align-self: flex-end;
+    margin-top: -40px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* 图表容器 */
+  .chart-container {
+    width: 100%;
+    height: 180px;
+  }
+  .donut-container {
+    width: 100%;
+    height: 200px;
+  }
+
+  /* 任务列表 (Onboarding) */
+  .task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #F9F9F9;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+  .task-icon {
+    width: 28px; height: 28px;
+    background: #E0E0E0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+  .task-text {
+    flex: 1;
+  }
+  .task-time {
+    font-size: 12px;
+    color: #999;
+  }
+  .task-done {
+    width: 18px; height: 18px;
+    background: #FFD166;
+    border-radius: 50%;
+  }
+  .task-pending {
+    width: 18px; height: 18px;
+    background: #ccc;
+    border-radius: 50%;
+  }
+
+  /* Bottom grid */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .list-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px dashed #E0E0E0;
+    font-size: 14px;
+    cursor: default;
+  }
+  .menu-item:last-child { border-bottom: none; }
+  .menu-item .arrow { color: #999; }
+  .sub-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+  }
+  .sub-item img {
+    width: 48px; height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  /* Calendar 风格 */
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .cal-nav {
+    display: flex;
+    gap: 8px;
+  }
+  .cal-nav button {
+    background: #F5F5F5;
+    border: none;
+    border-radius: 16px;
+    padding: 6px 16px;
+    font-size: 14px;
+    cursor: default;
+  }
+  .cal-nav button.active {
+    background: #2B2B2B;
+    color: #fff;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: 60px 1fr 1fr 1fr 1fr 1fr 1fr;
+    gap: 4px;
+    font-size: 12px;
+  }
+  .cal-time {
+    color: #999;
+    text-align: right;
+    padding-right: 8px;
+    line-height: 2;
+  }
+  .cal-event {
+    background: #2B2B2B;
+    color: #fff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .cal-event.light {
+    background: #fff;
+    color: #1A1A1A;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .cal-avatars {
+    display: flex;
+    margin-left: 6px;
+  }
+  .cal-avatars img {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1px solid #fff;
+    margin-left: -6px;
+  }
+
+  /* 响应式 */
+  @media (max-width: 900px) {
+    .grid-2x2, .bottom-grid { grid-template-columns: 1fr; }
+    .welcome-row { flex-direction: column; gap: 20px; }
+    .stats-group { flex-wrap: wrap; gap: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="dashboard">
+
+  <!-- ==================== Header ==================== -->
+  <header class="header">
+    <span class="logo">悠典医疗</span>
+    <nav class="nav">
+      <span class="nav-item active">概览</span>
+      <span class="nav-item">订单</span>
+      <span class="nav-item">客户</span>
+      <span class="nav-item">产品</span>
+    </nav>
+    <div class="header-right">
+      <div class="setting-btn">⚙ 设置</div>
+      <div class="icon-bell">🔔</div>
+      <div class="avatar">👤</div>
+    </div>
+  </header>
+
+  <!-- ==================== Welcome + Stats ==================== -->
+  <div class="welcome-row">
+    <div class="welcome-left">
+      <h1 class="welcome-title">订单统计概览</h1>
+      <div class="progress-group">
+        <div class="progress-item">
+          <label>总金额</label>
+          <div class="bar yellow" style="width:180px;">¥10.85M</div>
+        </div>
+        <div class="progress-item">
+          <label>订单数</label>
+          <div class="bar dark" style="width:120px;">136</div>
+        </div>
+        <div class="progress-item">
+          <label>客户数</label>
+          <div class="bar striped" style="width:140px;">30</div>
+        </div>
+        <div class="progress-item">
+          <label>产品种类</label>
+          <div class="bar outline" style="width:120px;">8</div>
+        </div>
+      </div>
+    </div>
+    <div class="stats-group">
+      <div>
+        <div class="stat-number">10.85M</div>
+        <div class="stat-label"><span class="stat-icon"></span> 总金额 (¥)</div>
+      </div>
+      <div>
+        <div class="stat-number">136</div>
+        <div class="stat-label"><span class="stat-icon"></span> 订单总数</div>
+      </div>
+      <div>
+        <div class="stat-number">30</div>
+        <div class="stat-label"><span class="stat-icon"></span> 客户总数</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 中间 Grid (2×2) ==================== -->
+  <div class="grid-2x2">
+
+    <!-- Card 1: 大客户 Profile -->
+    <div class="card" style="position:relative;">
+      <img class="profile-img" src="generated-images/for-png-1-3.jpg" alt="Top customer">
+      <span class="profile-badge" style="position:absolute; top:30px; right:30px;">¥6.34M</span>
+      <div class="profile-name">北京舒欣悦健医疗器械有限公司</div>
+      <div class="profile-role">累积金额 ¥6,339,963 · 采购 10 次</div>
+    </div>
+
+    <!-- Card 2: 月度趋势 (柱状图) -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">月度收入趋势</span>
+        <span class="card-link">↗</span>
+      </div>
+      <div id="trendChart" class="chart-container"></div>
+    </div>
+
+    <!-- Card 3: 产品分布 (环形图) -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">产品代码分布</span>
+        <span class="card-link">↗</span>
+      </div>
+      <div id="productDonut" class="donut-container"></div>
+    </div>
+
+    <!-- Card 4: 最近订单 (Onboarding 风格) -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">最近订单</span>
+        <span class="card-link">↗</span>
+      </div>
+      <div class="task-list">
+        <div class="task-item">
+          <div class="task-icon">📋</div>
+          <div class="task-text">
+            <strong>四川智辰天硕</strong><br>
+            <span class="task-time">¥6,076 · 2025-04</span>
+          </div>
+          <div class="task-done"></div>
+        </div>
+        <div class="task-item">
+          <div class="task-icon">📋</div>
+          <div class="task-text">
+            <strong>新疆恒润康</strong><br>
+            <span class="task-time">¥19,062 · 2025-04</span>
+          </div>
+          <div class="task-done"></div>
+        </div>
+        <div class="task-item">
+          <div class="task-icon">📋</div>
+          <div class="task-text">
+            <strong>沈阳华康利泰</strong><br>
+            <span class="task-time">¥152,456 · 2025-04</span>
+          </div>
+          <div class="task-pending"></div>
+        </div>
+        <div class="task-item">
+          <div class="task-icon">📋</div>
+          <div class="task-text">
+            <strong>广州康御盈</strong><br>
+            <span class="task-time">¥27,984 · 2025-04</span>
+          </div>
+          <div class="task-pending"></div>
+        </div>
+        <div class="task-item">
+          <div class="task-icon">📋</div>
+          <div class="task-text">
+            <strong>上海申绽</strong><br>
+            <span class="task-time">¥40,970 · 2025-04</span>
+          </div>
+          <div class="task-pending"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 底部 Grid (2列) ==================== -->
+  <div class="bottom-grid">
+
+    <!-- 左：客户排行列表 -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">客户排行</span>
+        <span class="card-link">↗</span>
+      </div>
+      <div class="list-menu">
+        <div class="menu-item">
+          <span>北京舒欣悦健医疗器械有限公司</span>
+          <span>¥6,339,963</span>
+        </div>
+        <div class="menu-item">
+          <span>上海库尔曼医疗器械有限公司</span>
+          <span>¥1,135,260</span>
+        </div>
+        <div class="menu-item">
+          <span>北京新兴时代科技发展有限公司</span>
+          <span>¥1,102,927</span>
+        </div>
+        <div class="menu-item">
+          <span>沈阳华康利泰科技有限公司</span>
+          <span>¥835,368</span>
+        </div>
+        <div class="menu-item">
+          <span>上海申绽贸易商行</span>
+          <span>¥298,280</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：日历风格时间线 -->
+    <div class="card">
+      <div class="cal-header">
+        <span class="card-title">订单时间线</span>
+        <div class="cal-nav">
+          <button>4月</button>
+          <button class="active">5月</button>
+          <button>6月</button>
+        </div>
+      </div>
+      <div class="cal-grid">
+        <div class="cal-time">08:00</div>
+        <div class="cal-event" style="grid-column:span 2;">
+          <div><strong>北京舒欣悦健</strong></div>
+          <div>订单 ¥1,181,312 · 0016</div>
+          <div class="cal-avatars">
+            <img src="generated-images/2.jpg" alt="avatar">
+            <img src="generated-images/2.jpg" alt="avatar">
+            <img src="generated-images/2.jpg" alt="avatar">
+          </div>
+        </div>
+        <div class="cal-time">10:00</div>
+        <div class="cal-event light" style="grid-column:span 2;">
+          <strong>沈阳华康利泰</strong><br>
+          ¥152,456 · 0021
+          <div class="cal-avatars">
+            <img src="generated-images/2.jpg" alt="avatar">
+            <img src="generated-images/2.jpg" alt="avatar">
+          </div>
+        </div>
+        <div class="cal-time">14:00</div>
+        <div class="cal-event" style="grid-column:span 2;">
+          <strong>上海库尔曼</strong><br>
+          ¥180,228 · 0016
+          <div class="cal-avatars">
+            <img src="generated-images/2.jpg" alt="avatar">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .dashboard -->
+
+<!-- ==================== 图表渲染 ==================== -->
+<script>
+  // 月度收入数据 (从2025年4月到2026年3月实际摘取)
+  const months = ['4月','5月','6月','7月','8月','9月','10月','11月','12月','1月','2月','3月'];
+  const revenue = [
+    6076+19062+4236+152456+27984+40970+1181312+6076,   // 2025-04
+    108018+7030+63540+6076+26700+29741+537+180228+36456+23920+14270+27984+159823,
+    33699+32220+1840+1840+2118+180440+29741+36456+38124+5754+24026+2118,
+    76870+6748+4236+152456+36800+26144+3958+29741+639106+692320+4630,
+    1095400+144090+14270+92530+22186+4050+6354+2118+28262+74130+41074,
+    88850+17950+108812+29741+152456+3958,
+    4630+28262+1840+24860+73190+6722+2700+6076+338560+81212+20346+8472,
+    2790+184000+108812+20346+2118+9260+4236+26700+8194+108812,
+    1074+152456+76870+32220+2685+10034+108812+21180,
+    152456+12152+7420+2118+26700+33699+81212+1074+108812+26700+13714+90412+5520+3958+103120+4236,
+    5340+868380+2118+1311144+2118+42532+14668+2685+1840+10210+8370,
+    810+72012+3958+7420+3222+12430+810+4236+19298+58920+29741+64718+20518+22464
+  ];
+  (function() {
+    var chartDom = document.getElementById('trendChart');
+    var myChart = echarts.init(chartDom);
+    var option = {
+      grid: { left: 40, right: 10, top: 10, bottom: 20 },
+      xAxis: {
+        type: 'category',
+        data: months,
+        axisLabel: { fontSize: 9, color: '#666' }
+      },
+      yAxis: {
+        type: 'value',
+        splitLine: { lineStyle: { color: '#eee' } },
+        axisLabel: { fontSize: 9 }
+      },
+      series: [{
+        data: revenue.map(v => v / 10000), // 万元
+        type: 'bar',
+        itemStyle: {
+          borderRadius: [4,4,0,0],
+          color: new echarts.graphic.LinearGradient(0,0,0,1, [
+            { offset:0, color:'#2B2B2B' },
+            { offset:1, color:'#FFD166' }
+          ])
+        },
+        barWidth: '60%'
+      }]
+    };
+    myChart.setOption(option);
+  })();
+
+  // 产品分布 (donut)
+  (function() {
+    var chartDom = document.getElementById('productDonut');
+    var myChart = echarts.init(chartDom);
+    var option = {
+      tooltip: { trigger: 'item' },
+      series: [{
+        type: 'pie',
+        radius: ['50%', '70%'],
+        avoidLabelOverlap: false,
+        label: { show: false },
+        emphasis: { scale: false },
+        data: [
+          { value: 22737, name: '0016' },
+          { value: 106, name: '0017' },
+          { value: 5284, name: '0021' },
+          { value: 11, name: '1003' },
+          { value: 12062, name: '0023' },
+          { value: 522, name: '0022' }
+        ],
+        color: ['#2B2B2B','#FFD166','#999999','#F2C94C','#6EE7B7','#F472B6']
+      }]
+    };
+    myChart.setOption(option);
+  })();
+</script>
+
+</body>
+</html>
