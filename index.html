@@ -61,6 +61,17 @@ body {
 .tile.special-bomb { box-shadow: inset 0 0 0 3px #ff9a56,0 0 16px #ff9a5680; }
 .tile.special-row { box-shadow: inset 0 0 0 3px #56c8ff,0 0 16px #56c8ff80; }
 .tile.special-col { box-shadow: inset 0 0 0 3px #56ff8a,0 0 16px #56ff8a80; }
+.tile.special-color { box-shadow: inset 0 0 0 3px #ff77ee,0 0 16px #ff77ee80; }
+
+/* 平滑出现动画 */
+.tile.appear {
+  animation: popIn 0.25s cubic-bezier(.34,1.56,.64,.99);
+}
+@keyframes popIn {
+  0%   { transform: scale(0.2); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
 #info {
   margin-top:14px;
   display:flex;
@@ -85,7 +96,8 @@ body {
   <div id="board"></div>
   <div id="info">
     <span>🍬 连4 → 💣</span>
-    <span>🔥 连5+ → 🚀</span>
+    <span>🔥 连5 → ➡️⬇️</span>
+    <span>🌈 连6+ → 同色消</span>
     <span class="chain" id="chainDisplay"></span>
   </div>
 </div>
@@ -99,7 +111,7 @@ const COLORS = [
 ];
 const TILE_ICONS = ['●','◆','★','▲','♥','♦'];
 
-let grid = [];          // 2D: { color, type:'none'|'bomb'|'row'|'col', colId? }
+let grid = [];          // 2D: { color, type:'none'|'bomb'|'row'|'col'|'color', colId? }
 let locked = false;
 let score = 0;
 let chainMultiplier = 1;
@@ -144,6 +156,7 @@ function render() {
       if (tile.type === 'bomb') { div.classList.add('special-bomb'); div.textContent='💣'; }
       else if (tile.type === 'row') { div.classList.add('special-row'); div.textContent='➡️'; }
       else if (tile.type === 'col') { div.classList.add('special-col'); div.textContent='⬇️'; }
+      else if (tile.type === 'color') { div.classList.add('special-color'); div.textContent='🌈'; }
       container.appendChild(div);
     }
   }
@@ -291,6 +304,7 @@ function cascadeStep() {
   // 处理每个组
   for (const group of groups) {
     let hasSpecial = false;
+    // 检查组内是否有特殊方块（炸弹/行/列/同色）
     for (const pos of group.positions) {
       const t = grid[pos.row][pos.col];
       if (t.type !== 'none') { hasSpecial=true; break; }
@@ -311,26 +325,43 @@ function cascadeStep() {
           for (let c=0; c<COLS; c++) removeSet.add(pos.row+','+c);
         } else if (t.type === 'col') {
           for (let r=0; r<ROWS; r++) removeSet.add(r+','+pos.col);
+        } else if (t.type === 'color') {
+          // 同色消除：移除棋盘所有该颜色方块
+          for (let r=0; r<ROWS; r++) {
+            for (let c=0; c<COLS; c++) {
+              if (grid[r][c] && grid[r][c].color === t.color) {
+                removeSet.add(r+','+c);
+              }
+            }
+          }
         }
         // 匹配位置本身也要移除
         removeSet.add(pos.row+','+pos.col);
       }
     } else {
-      // 普通匹配 —— 决定是否生成特殊
+      // 普通匹配 —— 决定是否生成特殊方块
       if (group.length === 4) {
-        // 生成炸弹 —— 保留中间一个不删
+        // 炸弹（3x3）
         const mid = Math.floor(group.positions.length/2);
         const keep = group.positions[mid];
         upgrades.push({row:keep.row, col:keep.col, type:'bomb', color:group.color});
         for (const pos of group.positions) {
           if (pos.row!==keep.row || pos.col!==keep.col) removeSet.add(pos.row+','+pos.col);
         }
-      } else if (group.length >= 5) {
-        // 生成 row 或 col
+      } else if (group.length === 5) {
+        // 行或列消除（保留一个方块升级为行/列炸弹）
         const mid = Math.floor(group.positions.length/2);
         const keep = group.positions[mid];
         const dir = group.horizontal ? 'row' : 'col';
         upgrades.push({row:keep.row, col:keep.col, type:dir, color:group.color});
+        for (const pos of group.positions) {
+          if (pos.row!==keep.row || pos.col!==keep.col) removeSet.add(pos.row+','+pos.col);
+        }
+      } else if (group.length >= 6) {
+        // 同色炸弹（6+连消）
+        const mid = Math.floor(group.positions.length/2);
+        const keep = group.positions[mid];
+        upgrades.push({row:keep.row, col:keep.col, type:'color', color:group.color});
         for (const pos of group.positions) {
           if (pos.row!==keep.row || pos.col!==keep.col) removeSet.add(pos.row+','+pos.col);
         }
@@ -341,7 +372,7 @@ function cascadeStep() {
     }
   }
 
-  // 执行移除动画
+  // 执行移除动画（让移除的方块淡出）
   for (const key of removeSet) {
     const [r,c] = key.split(',').map(Number);
     const div = getTileDiv(r,c);
@@ -356,35 +387,44 @@ function cascadeStep() {
   chainEl.textContent = `×${chainMultiplier}`;
 
   setTimeout(() => {
-    // 实际消除
+    // 1. 隐藏被移除的div（防止闪烁）
+    for (const key of removeSet) {
+      const [r,c] = key.split(',').map(Number);
+      const div = getTileDiv(r,c);
+      if (div) div.style.visibility = 'hidden';
+    }
+    // 2. 实际从grid中移除
     for (const key of removeSet) {
       const [r,c] = key.split(',').map(Number);
       grid[r][c] = null;
     }
-    // 放置升级特殊块
+    // 3. 放置升级特殊块
     for (const up of upgrades) {
       const r=up.row, c=up.col;
       grid[r][c] = { color: up.color, type: up.type };
     }
-    // 下落 + 填充
-    applyGravityAndFill(() => {
-      render();
+    // 4. 下落 + 填充（只修改grid，渲染交给renderAfterFill）
+    applyGravityOnly();   // 仅修改grid数据，不调用render
+    render();             // 重新绘制整个棋盘（此时已经是最新数据）
+    // 5. 为新出现的方块添加弹出动画
+    const tiles = container.querySelectorAll('.tile');
+    tiles.forEach(t => t.classList.add('appear'));
+    // 6. 继续级联检查
+    setTimeout(() => {
+      tiles.forEach(t => t.classList.remove('appear'));
       cascadeStep();
-    });
+    }, 280);
   }, 300);
 }
 
-// ---------- 下落与填充 ----------
-function applyGravityAndFill(callback) {
-  // 从底部向上移动
+// ---------- 下落（只修改grid，不触发渲染） ----------
+function applyGravityOnly() {
   for (let c=0; c<COLS; c++) {
     let writeRow = ROWS-1;
     for (let r=ROWS-1; r>=0; r--) {
       if (grid[r][c] !== null) {
-        if (r !== writeRow) {
-          grid[writeRow][c] = grid[r][c];
-          grid[r][c] = null;
-        }
+        grid[writeRow][c] = grid[r][c];
+        if (r !== writeRow) grid[r][c] = null;
         writeRow--;
       }
     }
@@ -393,7 +433,14 @@ function applyGravityAndFill(callback) {
       grid[r][c] = { color: Math.floor(Math.random()*COLORS.length), type:'none' };
     }
   }
-  // 动画：添加falling类
+}
+
+// ---------- 下落与填充（旧版，不再使用） ----------
+function applyGravityAndFill(callback) {
+  // 旧版实现保留以兼容调用，但不会被新代码调用
+  applyGravityOnly();
+  render();
+  // 动画：添加falling类（仍保留视觉效果）
   for (let r=0; r<ROWS; r++) {
     for (let c=0; c<COLS; c++) {
       const div = getTileDiv(r,c);
