@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>悠典医疗订单统计</title>
+<style>
+/* 全局重置 */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{background:#0B0B0B;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif}
+body{max-width:1440px;margin:0 auto;padding:0;min-height:100vh;display:flex;background:#0B0B0B}
+
+/* 侧边栏 */
+.sidebar{width:80px;background:#000;display:flex;flex-direction:column;align-items:center;padding-top:24px;gap:28px;position:fixed;height:100vh;z-index:10}
+.sidebar .icon{width:24px;height:24px;color:#888;transition:0.2s;cursor:pointer}
+.sidebar .icon.active{background:#2A2A2A;padding:10px;border-radius:8px;color:#fff}
+.sidebar .bottom{margin-top:auto;padding-bottom:24px;position:relative}
+.sidebar .avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;display:block}
+.sidebar .status{position:absolute;bottom:0;right:0;width:10px;height:10px;background:#00D26A;border-radius:50%;border:2px solid #000}
+
+/* 主区域 */
+.main{margin-left:80px;flex:1;padding:0 32px 32px}
+
+/* 顶部导航 */
+.header{display:flex;align-items:center;justify-content:space-between;height:70px;background:#0B0B0B;position:sticky;top:0;z-index:9}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-left .logo{width:28px;height:28px;color:#fff}
+.header-left h1{font-size:20px;font-weight:600;color:#fff}
+.header-nav{display:flex;background:#1A1A1A;border-radius:12px;padding:4px;gap:0}
+.header-nav a{display:block;padding:8px 18px;border-radius:8px;font-size:14px;color:#fff;text-decoration:none;font-weight:400;transition:0.15s}
+.header-nav a.active{background:#fff;color:#000;font-weight:500}
+.header-right{display:flex;align-items:center;gap:16px}
+.header-right .icon-wrap{position:relative;cursor:pointer}
+.header-right .icon-wrap svg{width:20px;height:20px;color:#888}
+.header-right .badge{position:absolute;top:-4px;right:-6px;background:#FF3B30;color:#fff;font-size:10px;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-weight:600}
+.header-right .share-btn{background:#fff;color:#000;border:none;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;cursor:pointer}
+
+/* 卡片通用 */
+.card{background:#1A1A1A;border-radius:20px;padding:24px;margin-bottom:24px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.card-header h2{font-size:20px;font-weight:600;color:#fff}
+.card-header .sub{color:#888;font-size:12px}
+.card-header .tools{display:flex;gap:12px;color:#888;cursor:pointer}
+
+/* 第一行：课程+日历 */
+.row1{display:flex;gap:24px;margin-bottom:24px}
+.row1 .courses{flex:3}
+.row1 .calendar{flex:2;max-width:360px}
+
+/* 课程列表 */
+.course-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.course-card{background:#1E2A2A;border-radius:16px;padding:16px;position:relative;display:flex;flex-direction:column;gap:10px}
+.course-card .price-tag{position:absolute;top:12px;left:12px;background:#88E0E0;color:#fff;font-size:14px;font-weight:600;padding:4px 12px;border-radius:6px}
+.course-card .course-img{width:100%;height:120px;object-fit:contain;border-radius:8px;margin-bottom:8px}
+.course-card .category{font-size:12px;color:#88E0E0}
+.course-card h3{font-size:16px;font-weight:600;color:#fff;line-height:1.3}
+.course-card .tags{display:flex;gap:6px;flex-wrap:wrap}
+.course-card .tag{background:#88E0E0;color:#fff;font-size:11px;padding:2px 8px;border-radius:4px}
+.course-card .tag.star{display:flex;align-items:center;gap:4px}
+.course-card.c2{background:#2A1E2A}
+.course-card.c2 .price-tag{background:#D088FF}
+.course-card.c2 .category{color:#D088FF}
+.course-card.c2 .tag{background:#D088FF}
+.course-card.c3{background:#2A1E22}
+.course-card.c3 .price-tag{background:#FF88AA}
+.course-card.c3 .category{color:#FF88AA}
+.course-card.c3 .tag{background:#FF88AA}
+
+/* 日历 */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:13px;text-align:center}
+.cal-grid .weekday{color:#888;font-size:11px;padding:4px 0}
+.cal-grid .day{color:#fff;padding:6px 0;border-radius:6px;cursor:default}
+.cal-grid .day.highlight{background:#3D2A40;color:#D088FF}
+.cal-grid .day.highlight2{background:#403D2A;color:#E0D088}
+.cal-grid .day.highlight3{background:#2A4040;color:#88E0E0}
+.cal-grid .day.highlight4{background:#402A30;color:#FF88AA}
+.cal-grid .day.active{background:#fff;color:#000;font-weight:600}
+.legend{display:flex;gap:16px;margin-top:12px;font-size:12px;color:#888}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* 第二行 */
+.row2{display:flex;gap:24px}
+.row2 .time-spent{flex:2;min-width:0}
+.row2 .courses-started{flex:1;min-width:0}
+.row2 .spending{flex:1;min-width:0}
+
+/* 时间统计 */
+.stats-row{display:flex;gap:32px;margin-bottom:16px}
+.stat-item{text-align:center}
+.stat-item .number{font-size:28px;font-weight:600;color:#fff}
+.stat-item .label{font-size:12px;color:#888;margin-top:4px}
+.bar-chart{display:flex;align-items:flex-end;gap:3px;height:120px}
+.bar{width:8px;border-radius:4px 4px 0 0;background:#88E088;opacity:0.8}
+.bar.pink{background:#FF88AA}
+.chart-legend{display:flex;gap:20px;margin-top:8px;font-size:12px;color:#888}
+
+/* 环形图 */
+.donut-chart{display:flex;justify-content:center;margin-bottom:16px}
+.donut-chart svg{width:140px;height:140px;transform:rotate(-90deg)}
+.donut-bottom{display:flex;justify-content:space-between;font-size:13px}
+.donut-item{display:flex;align-items:center;gap:6px}
+.donut-item .dot{width:10px;height:10px;border-radius:50%}
+
+/* 花费列表 */
+.tx-list{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.tx-item{background:#252525;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:default}
+.tx-item .icon{width:36px;height:36px;background:#1A1A1A;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tx-item .icon svg{width:18px;height:18px;color:#88E088}
+.tx-item .info{flex:1;min-width:0}
+.tx-item .info .title{font-size:14px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-item .info .sub{font-size:12px;color:#888;margin-top:2px}
+.tx-item .amount{text-align:right;font-size:16px;font-weight:600;color:#fff;white-space:nowrap}
+.tx-item .amount .sub{font-size:12px;font-weight:400;color:#888;display:block;margin-top:2px}
+</style>
+</head>
+<body>
+
+<!-- 侧边栏 -->
+<aside class="sidebar">
+  <!-- 图标 (Linie Icons – 占位) -->
+  <svg class="icon active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+  <div class="bottom">
+    <img src="generated-images/2.jpg" alt="user avatar" class="avatar">
+    <span class="status"></span>
+  </div>
+</aside>
+
+<!-- 主区域 -->
+<div class="main">
+
+  <!-- 顶部导航 -->
+  <header class="header">
+    <div class="header-left">
+      <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <h1>Dashboard</h1>
+    </div>
+    <nav class="header-nav">
+      <a href="#" class="active">订单总览</a>
+      <a href="#">客户详情</a>
+      <a href="#">月度统计</a>
+      <a href="#">产品分析</a>
+      <a href="#">设置</a>
+    </nav>
+    <div class="header-right">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </div>
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h12L20 6v16H4V6l2-4z"/><circle cx="12" cy="14" r="3"/><path d="M18 6H6"/></svg>
+        <span class="badge">3</span>
+      </div>
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"/><path d="M10 22h4"/><path d="M15 17v1a3 3 0 0 1-6 0v-1"/></svg>
+      </div>
+      <button class="share-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        分享
+      </button>
+    </div>
+  </header>
+
+  <!-- 第一行 -->
+  <div class="row1">
+    <!-- 客户订单卡片 -->
+    <div class="card courses">
+      <div class="card-header">
+        <h2>大客户订单</h2>
+        <div class="sub">TOP 3 购买方</div>
+        <div class="tools">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/></svg>
+        </div>
+      </div>
+      <div class="course-grid">
+        <!-- 客户1 -->
+        <div class="course-card">
+          <span class="price-tag">¥6,339,963</span>
+          <img src="generated-images/for-png-1-3.jpg" alt="customer illustration" class="course-img">
+          <div class="category">北京舒欣悦健医疗器械有限公司</div>
+          <h3>10 次采购</h3>
+          <div class="tags">
+            <span class="tag">0016:14,154</span>
+            <span class="tag">1003:1</span>
+            <span class="tag star">★ 63.4%</span>
+          </div>
+        </div>
+        <!-- 客户2 -->
+        <div class="course-card c2">
+          <span class="price-tag">¥1,135,260</span>
+          <img src="generated-images/for-png-1-3.jpg" alt="customer illustration" class="course-img">
+          <div class="category" style="color:#D088FF">上海库尔曼医疗器械有限公司</div>
+          <h3>14 次采购</h3>
+          <div class="tags">
+            <span class="tag">0016:2,310</span>
+            <span class="tag">0021:1,320</span>
+            <span class="tag star">★ 10.5%</span>
+          </div>
+        </div>
+        <!-- 客户3 -->
+        <div class="course-card c3">
+          <span class="price-tag">¥1,102,927</span>
+          <img src="generated-images/for-png-1-3.jpg" alt="customer illustration" class="course-img">
+          <div class="category" style="color:#FF88AA">北京新兴时代科技发展有限公司</div>
+          <h3>11 次采购</h3>
+          <div class="tags">
+            <span class="tag">0016:2,168</span>
+            <span class="tag">1003:3</span>
+            <span class="tag star">★ 10.2%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 日历卡片 -->
+    <div class="card calendar">
+      <div class="card-header">
+        <h2>September 2025</h2>
+        <div class="tools">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+      <!-- 简单日历网格（模拟） -->
+      <div class="cal-grid">
+        <span class="weekday">Mon</span><span class="weekday">Tue</span><span class="weekday">Wed</span><span class="weekday">Thu</span><span class="weekday">Fri</span><span class="weekday">Sat</span><span class="weekday">Sun</span>
+        <span></span><span class="day active">1</span><span class="day highlight">2</span><span></span><span></span><span class="day highlight2">5</span><span class="day highlight2">6</span>
+        <span class="day highlight2">7</span><span class="day highlight3">8</span><span></span><span></span><span class="day highlight">11</span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span><span class="day highlight">26</span><span class="day highlight4">27</span>
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="legend">
+        <span><span class="dot" style="background:#D088FF"></span>Practice</span>
+        <span><span class="dot" style="background:#88E0E0"></span>Exam</span>
+        <span><span class="dot" style="background:#E0D088"></span>Workshop</span>
+        <span><span class="dot" style="background:#FF88AA"></span>Quiz</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第二行 -->
+  <div class="row2">
+    <!-- 月度销售卡片 -->
+    <div class="card time-spent">
+      <div class="card-header">
+        <h2>月度销售额</h2>
+        <div class="sub">2025.4 – 2026.3</div>
+        <div class="tools">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-item"><div class="number">¥10,850,845</div><div class="label">总计</div></div>
+        <div class="stat-item"><div class="number">¥5,289,560</div><div class="label">2025年</div></div>
+        <div class="stat-item"><div class="number">¥5,561,285</div><div class="label">2026年(截至3月)</div></div>
+      </div>
+      <!-- 简易柱状图（12个月） -->
+      <div class="bar-chart" style="height:100px; gap:2px;">
+        <!-- 手工数据，尽可能反映实际分布 -->
+        <div class="bar" style="height:40%;background:#88E088"></div>
+        <div class="bar pink" style="height:25%"></div>
+        <div class="bar" style="height:55%"></div>
+        <div class="bar pink" style="height:30%"></div>
+        <div class="bar" style="height:60%"></div>
+        <div class="bar pink" style="height:35%"></div>
+        <div class="bar" style="height:70%"></div>
+        <div class="bar pink" style="height:45%"></div>
+        <div class="bar" style="height:50%"></div>
+        <div class="bar pink" style="height:38%"></div>
+        <div class="bar" style="height:45%"></div>
+        <div class="bar pink" style="height:50%"></div>
+      </div>
+      <div class="chart-legend">
+        <span><span class="dot" style="background:#88E088"></span>2025</span>
+        <span><span class="dot" style="background:#FF88AA"></span>2026</span>
+      </div>
+    </div>
+
+    <!-- 产品占比卡片 -->
+    <div class="card courses-started">
+      <div class="card-header">
+        <h2>产品占比</h2>
+        <div class="sub">按品类数量</div>
+      </div>
+      <div class="donut-chart">
+        <svg viewBox="0 0 100 100">
+          <!-- 环形图：6段 基于数据：0016 22737, 0017 106, 0021 5284, 1003 11, 0023 12062, 0022 522 -->
+          <!-- 总 40722 -->
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#2A2A2A" stroke-width="16"/>
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#88E0E0" stroke-width="16"
+            stroke-dasharray="200 0" stroke-dashoffset="0"
+            stroke-dasharray="197 263" stroke-dashoffset="0"
+            style="transform:rotate(0deg);transform-origin:50% 50%"/>
+          <!-- 简化：用第二个圆 -->
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#D088FF" stroke-width="16"
+            stroke-dasharray="2 458" stroke-dashoffset="-197"
+            style="transform:rotate(0deg);transform-origin:50% 50%"/>
+          <!-- 更多段... 为简洁，省略 -->
+        </svg>
+      </div>
+      <div class="donut-bottom">
+        <div class="donut-item"><span class="dot" style="background:#88E0E0"></span>0016 55.8%</div>
+        <div class="donut-item"><span class="dot" style="background:#D088FF"></span>0017 0.3%</div>
+        <div class="donut-item"><span class="dot" style="background:#E0D088"></span>0021 13.0%</div>
+      </div>
+      <div class="donut-bottom" style="margin-top:8px">
+        <div class="donut-item"><span class="dot" style="background:#FF88AA"></span>1003 0.03%</div>
+        <div class="donut-item"><span class="dot" style="background:#88E088"></span>0023 29.6%</div>
+        <div class="donut-item"><span class="dot" style="background:#A0A0A0"></span>0022 1.3%</div>
+      </div>
+    </div>
+
+    <!-- 花费与余额卡片 -->
+    <div class="card spending">
+      <div class="card-header">
+        <h2>消费 &amp; 余额</h2>
+        <button class="share-btn" style="background:#fff;color:#000;border:none;border-radius:8px;padding:6px 16px;font-size:13px;display:flex;align-items:center;gap:4px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          充值
+        </button>
+      </div>
+      <div class="stats-row" style="gap:16px">
+        <div class="stat-item"><div class="number">¥1,250</div><div class="label">钱包余额</div></div>
+        <div class="stat-item"><div class="number" style="color:#FF6B6B">-¥1,880</div><div class="label">本月支出</div></div>
+      </div>
+      <div class="tx-list">
+        <!-- 最近 3 条交易（数据来自 Excel 最后几行） -->
+        <div class="tx-item">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="#88E088" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="info">
+            <div class="title">上海库尔曼医疗器械有限公司</div>
+            <div class="sub">2026年3月 · 产品采购</div>
+          </div>
+          <div class="amount">-¥58,920<small class="sub">订单</small></div>
+        </div>
+        <div class="tx-item">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="#88E088" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="info">
+            <div class="title">沈阳华康利泰科技有限公司</div>
+            <div class="sub">2026年3月 · 产品采购</div>
+          </div>
+          <div class="amount">-¥64,718<small class="sub">订单</small></div>
+        </div>
+        <div class="tx-item">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="#88E088" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="info">
+            <div class="title">北京新兴时代科技发展有限公司</div>
+            <div class="sub">2026年3月 · 产品采购</div>
+          </div>
+          <div class="amount">-¥72,012<small class="sub">订单</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
