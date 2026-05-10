@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>三消宝石 · 连锁奖励</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; user-select:none; }
+body {
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+#game {
+  background: rgba(0,0,0,0.55);
+  backdrop-filter:blur(8px);
+  border-radius:24px;
+  padding:30px 40px 35px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+}
+#header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:16px;
+  color:#fff;
+  text-shadow:0 2px 4px rgba(0,0,0,0.6);
+}
+#header h1 { font-size:22px; letter-spacing:2px; font-weight:600; }
+#score-area { display:flex; gap:28px; font-size:17px; }
+#score-area span { font-weight:700; color:#ffe66d; }
+#board {
+  display:grid;
+  grid-template-columns: repeat(8, 64px);
+  gap:3px;
+  background:rgba(20,20,40,0.3);
+  border-radius:12px;
+  padding:8px;
+  touch-action: none;
+}
+.tile {
+  width:64px;
+  height:64px;
+  border-radius:10px;
+  cursor:pointer;
+  transition: transform 0.18s cubic-bezier(.34,1.56,.64,.99),
+              opacity 0.2s ease;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:26px;
+  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25), 0 3px 8px rgba(0,0,0,0.3);
+  position:relative;
+}
+.tile.selected { transform:scale(1.08); box-shadow:0 0 0 3px #ffe66d, inset 0 -3px 0 rgba(0,0,0,0.2); }
+.tile.swap-out { transform:translateY(-80px) scale(0.6); opacity:0; }
+.tile.falling { transition: transform 0.28s cubic-bezier(.2,.9,.3,1); }
+.tile.removing { transform:scale(0.2); opacity:0; }
+.tile.special-bomb { box-shadow: inset 0 0 0 3px #ff9a56,0 0 16px #ff9a5680; }
+.tile.special-row { box-shadow: inset 0 0 0 3px #56c8ff,0 0 16px #56c8ff80; }
+.tile.special-col { box-shadow: inset 0 0 0 3px #56ff8a,0 0 16px #56ff8a80; }
+
+/* 平滑出现动画 — 包含下落效果 */
+.tile.appear {
+  animation: popIn 0.35s cubic-bezier(.34,1.56,.64,.99);
+}
+@keyframes popIn {
+  0%   { transform: translateY(-120px) scale(0.4); opacity:0; }
+  100% { transform: translateY(0) scale(1);   opacity:1; }
+}
+
+#info {
+  margin-top:14px;
+  display:flex;
+  justify-content:center;
+  gap:24px;
+  color:#ccc;
+  font-size:14px;
+  letter-spacing:1px;
+}
+#info .chain { color:#ffe66d; }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="header">
+    <h1>✨ 连锁消除 ✨</h1>
+    <div id="score-area">
+      <span id="score">0</span>
+      <span id="chain">x1</span>
+    </div>
+  </div>
+  <div id="board"></div>
+  <div id="info">
+    <span>🍬 连4 → 💣</span>
+    <span>🔥 连5 → ➡️⬇️</span>
+  </div>
+</div>
+
+<script>
+// ---------- 游戏配置 ----------
+const ROWS = 8;
+const COLS = 8;
+const COLORS = [
+  '#ff6b6b','#4ecdc4','#ffe66d','#95e1d3','#f38181','#aa96da'
+];
+const TILE_ICONS = ['●','◆','★','▲','♥','♦'];
+
+let grid = [];          // 2D: { color, type:'none'|'bomb'|'row'|'col', colId? }
+let locked = false;
+let score = 0;
+let chainMultiplier = 1;
+let currentChain = 0;
+let container = document.getElementById('board');
+let scoreEl = document.getElementById('score');
+let chainEl = document.getElementById('chain');
+let tileElements = [];  // 2D array of div references
+
+// ---------- 初始化 ----------
+function initGrid() {
+  grid = [];
+  for (let r=0; r<ROWS; r++) {
+    grid[r] = [];
+    for (let c=0; c<COLS; c++) {
+      do {
+        grid[r][c] = { color: Math.floor(Math.random()*COLORS.length), type:'none' };
+      } while (hasMatchAt(r,c,true));
+    }
+  }
+}
+
+function hasMatchAt(row, col, checkOnly = false) {
+  // 检查是否形成3连（初始化用）
+  if (col>=2 && grid[row][col-1].color===grid[row][col].color && grid[row][col-2].color===grid[row][col].color) return true;
+  if (row>=2 && grid[row-1][col].color===grid[row][col].color && grid[row-2][col].color===grid[row][col].color) return true;
+  return false;
+}
+
+// ---------- 创建并更新 DOM tiles ----------
+function createBoardElements() {
+  tileElements = Array.from({length:ROWS}, ()=>[]);
+  for (let r=0; r<ROWS; r++) {
+    for (let c=0; c<COLS; c++) {
+      const div = document.createElement('div');
+      div.className = 'tile';
+      div.dataset.row = r;
+      div.dataset.col = c;
+      container.appendChild(div);
+      tileElements[r][c] = div;
+    }
+  }
+}
+
+function updateBoard() {
+  for (let r=0; r<ROWS; r++) {
+    for (let c=0; c<COLS; c++) {
+      const tile = grid[r][c];
+      const el = tileElements[r][c];
+      if (tile === null) {
+        el.style.visibility = 'hidden';
+        el.className = 'tile';
+        el.style.background = '';
+        el.textContent = '';
+        continue;
+      }
+      el.style.visibility = 'visible';
+      el.className = 'tile';
+      el.style.background = COLORS[tile.color];
+      if (tile.type === 'bomb') { el.classList.add('special-bomb'); el.textContent='💣'; }
+      else if (tile.type === 'row') { el.classList.add('special-row'); el.textContent='➡️'; }
+      else if (tile.type === 'col') { el.classList.add('special-col'); el.textContent='⬇️'; }
+      else { el.textContent = TILE_ICONS[tile.color]; }
+    }
+  }
+}
+
+// ---------- 交互 ----------
+let selRow = -1, selCol = -1;
+
+function getTileDiv(r,c) {
+  return tileElements[r][c];
+}
+
+function clearSelection() {
+  if (selRow>=0) {
+    const prev = getTileDiv(selRow, selCol);
+    if (prev) prev.classList.remove('selected');
+  }
+  selRow = -1; selCol = -1;
+}
+
+function onTileDown(r,c) {
+  if (locked) return;
+  if (selRow===-1) {
+    selRow=r; selCol=c;
+    getTileDiv(r,c).classList.add('selected');
+    return;
+  }
+  // 判断相邻
+  const dr = Math.abs(r - selRow);
+  const dc = Math.abs(c - selCol);
+  if ((dr===1 && dc===0) || (dr===0 && dc===1)) {
+    const r1=selRow,c1=selCol, r2=r,c2=c;
+    clearSelection();
+    trySwap(r1,c1,r2,c2);
+  } else {
+    clearSelection();
+    selRow=r; selCol=c;
+    getTileDiv(r,c).classList.add('selected');
+  }
+}
+
+// ---------- 交换 ----------
+function trySwap(r1,c1,r2,c2) {
+  locked = true;
+  animateSwap(r1,c1,r2,c2, () => {
+    swap(r1,c1,r2,c2);
+    const found = findMatches();
+    if (found.length===0) {
+      // 无效交换 → 换回
+      animateSwap(r1,c1,r2,c2, () => {
+        swap(r1,c1,r2,c2);
+        updateBoard();
+        locked = false;
+      });
+    } else {
+      processMatchesAndCascade();
+    }
+  });
+}
+
+function swap(r1,c1,r2,c2) {
+  const tmp = grid[r1][c1];
+  grid[r1][c1] = grid[r2][c2];
+  grid[r2][c2] = tmp;
+}
+
+function animateSwap(r1,c1,r2,c2, callback) {
+  const d1 = getTileDiv(r1,c1);
+  const d2 = getTileDiv(r2,c2);
+  if (!d1 || !d2) { callback(); return; }
+  const rect1 = d1.getBoundingClientRect();
+  const rect2 = d2.getBoundingClientRect();
+  const dx = rect2.left - rect1.left;
+  const dy = rect2.top - rect1.top;
+  d1.style.transition = 'transform 0.18s cubic-bezier(.34,1.56,.64,.99)';
+  d2.style.transition = 'transform 0.18s cubic-bezier(.34,1.56,.64,.99)';
+  d1.style.transform = `translate(${dx}px,${dy}px)`;
+  d2.style.transform = `translate(${-dx}px,${-dy}px)`;
+  setTimeout(() => {
+    d1.style.transition = '';
+    d2.style.transition = '';
+    d1.style.transform = '';
+    d2.style.transform = '';
+    callback();
+  }, 200);
+}
+
+// ---------- 匹配检测 ----------
+function findMatches() {
+  const groups = [];
+  // 水平
+  for (let r=0; r<ROWS; r++) {
+    let start=0;
+    while (start<COLS) {
+      let end=start;
+      while (end+1<COLS && grid[r][end+1].color===grid[r][start].color) end++;
+      const len = end-start+1;
+      if (len>=3) {
+        const positions = [];
+        for (let c=start; c<=end; c++) positions.push({row:r,col:c});
+        groups.push({positions, color:grid[r][start].color, length:len, horizontal:true});
+      }
+      start=end+1;
+    }
+  }
+  // 垂直
+  for (let c=0; c<COLS; c++) {
+    let start=0;
+    while (start<ROWS) {
+      let end=start;
+      while (end+1<ROWS && grid[end+1][c].color===grid[start][c].color) end++;
+      const len = end-start+1;
+      if (len>=3) {
+        const positions = [];
+        for (let r=start; r<=end; r++) positions.push({row:r,col:c});
+        groups.push({positions, color:grid[start][c].color, length:len, horizontal:false});
+      }
+      start=end+1;
+    }
+  }
+  return groups;
+}
+
+// ---------- 处理匹配与级联 ----------
+function processMatchesAndCascade() {
+  currentChain = 0;
+  cascadeStep();
+}
+
+function cascadeStep() {
+  const groups = findMatches();
+  if (groups.length===0) {
+    currentChain = 0;
+    chainMultiplier = 1;
+    locked = false;
+    updateBoard();
+    return;
+  }
+  currentChain++;
+  chainMultiplier = Math.min(currentChain,10);
+  const removeSet = new Set();
+  const upgrades = []; // {row,col,type,color}
+
+  // 处理每个组
+  for (const group of groups) {
+    let hasSpecial = false;
+    // 检查组内是否有特殊方块（炸弹/行/列）
+    for (const pos of group.positions) {
+      const t = grid[pos.row][pos.col];
+      if (t.type !== 'none') { hasSpecial=true; break; }
+    }
+    if (hasSpecial) {
+      // 激活特殊效果
+      for (const pos of group.positions) {
+        const t = grid[pos.row][pos.col];
+        if (t.type === 'bomb') {
+          // 3x3区域
+          for (let dr=-1; dr<=1; dr++) {
+            for (let dc=-1; dc<=1; dc++) {
+              const nr = pos.row+dr, nc = pos.col+dc;
+              if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS) removeSet.add(nr+','+nc);
+            }
+          }
+        } else if (t.type === 'row') {
+          for (let c=0; c<COLS; c++) removeSet.add(pos.row+','+c);
+        } else if (t.type === 'col') {
+          for (let r=0; r<ROWS; r++) removeSet.add(r+','+pos.col);
+        }
+        // 匹配位置本身也要移除
+        removeSet.add(pos.row+','+pos.col);
+      }
+    } else {
+      // 普通匹配 —— 决定是否生成特殊方块
+      if (group.length === 4) {
+        // 炸弹（3x3）
+        const mid = Math.floor(group.positions.length/2);
+        const keep = group.positions[mid];
+        upgrades.push({row:keep.row, col:keep.col, type:'bomb', color:group.color});
+        for (const pos of group.positions) {
+          if (pos.row!==keep.row || pos.col!==keep.col) removeSet.add(pos.row+','+pos.col);
+        }
+      } else if (group.length === 5 || group.length >= 6) {
+        // 行或列炸弹（5连及以上）
+        const mid = Math.floor(group.positions.length/2);
+        const keep = group.positions[mid];
+        const dir = group.horizontal ? 'row' : 'col';
+        upgrades.push({row:keep.row, col:keep.col, type:dir, color:group.color});
+        for (const pos of group.positions) {
+          if (pos.row!==keep.row || pos.col!==keep.col) removeSet.add(pos.row+','+pos.col);
+        }
+      } else {
+        // 3连
+        for (const pos of group.positions) removeSet.add(pos.row+','+pos.col);
+      }
+    }
+  }
+
+  // 执行移除动画（让移除的方块淡出）
+  for (const key of removeSet) {
+    const [r,c] = key.split(',').map(Number);
+    const el = tileElements[r][c];
+    if (el) el.classList.add('removing');
+  }
+
+  // 计分
+  const removedCount = removeSet.size;
+  const pts = removedCount * 10 * chainMultiplier;
+  score += pts;
+  scoreEl.textContent = score;
+  chainEl.textContent = `×${chainMultiplier}`;
+
+  setTimeout(() => {
+    // 实际从grid中移除
+    for (const key of removeSet) {
+      const [r,c] = key.split(',').map(Number);
+      grid[r][c] = null;
+    }
+    // 放置升级特殊块
+    for (const up of upgrades) {
+      const r=up.row, c=up.col;
+      grid[r][c] = { color: up.color, type: up.type };
+    }
+    // 下落 + 填充
+    applyGravityOnly();
+    updateBoard();
+    // 出现动画
+    for (let r=0; r<ROWS; r++) {
+      for (let c=0; c<COLS; c++) {
+        const el = tileElements[r][c];
+        if (el) el.classList.add('appear');
+      }
+    }
+    setTimeout(() => {
+      for (let r=0; r<ROWS; r++) {
+        for (let c=0; c<COLS; c++) {
+          const el = tileElements[r][c];
+          if (el) el.classList.remove('appear');
+        }
+      }
+      cascadeStep();
+    }, 350);
+  }, 300);
+}
+
+// ---------- 下落（只修改grid，不触发渲染） ----------
+function applyGravityOnly() {
+  for (let c=0; c<COLS; c++) {
+    let writeRow = ROWS-1;
+    for (let r=ROWS-1; r>=0; r--) {
+      if (grid[r][c] !== null) {
+        grid[writeRow][c] = grid[r][c];
+        if (r !== writeRow) grid[r][c] = null;
+        writeRow--;
+      }
+    }
+    // 填充顶部空位
+    for (let r=writeRow; r>=0; r--) {
+      grid[r][c] = { color: Math.floor(Math.random()*COLORS.length), type:'none' };
+    }
+  }
+}
+
+// ---------- 事件绑定 ----------
+function bindEvents() {
+  container.addEventListener('mousedown', (e) => {
+    const tile = e.target.closest('.tile');
+    if (!tile) return;
+    const r = parseInt(tile.dataset.row);
+    const c = parseInt(tile.dataset.col);
+    onTileDown(r,c);
+  });
+
+  container.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const tile = el ? el.closest('.tile') : null;
+    if (!tile) return;
+    const r = parseInt(tile.dataset.row);
+    const c = parseInt(tile.dataset.col);
+    onTileDown(r,c);
+    e.preventDefault();
+  }, {passive: false});
+}
+
+// ---------- 启动 ----------
+initGrid();
+createBoardElements();
+updateBoard();
+bindEvents();
+</script>
+</body>
+</html>
