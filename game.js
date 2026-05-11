@@ -1,3 +1,5 @@
+import { createEffects } from './effects.js';
+
 const COLORS = [
   { emote: '❤️', bg: '#e03a3a' },
   { emote: '💎', bg: '#3a87e0' },
@@ -14,7 +16,7 @@ const POWER_ICONS = {
   color: '🎨'
 };
 
-class Game {
+export class Game {
   constructor({ levels, effects, onStateChange, onEvent }) {
     this.levels = levels;
     this.effects = effects;
@@ -148,7 +150,19 @@ class Game {
 
   _randomCell() {
     const ci = Math.floor(Math.random() * this.colorsCount);
-    return { color: ci, powerUp: null };
+    const colorInfo = COLORS[ci];
+    const powerUp = Math.random() < 0.07 ? this._randomPower() : null;
+    return {
+      color: ci,
+      powerUp,
+      emote: powerUp ? POWER_ICONS[powerUp] : colorInfo.emote,
+      bg: colorInfo.bg
+    };
+  }
+
+  _randomPower() {
+    const keys = Object.keys(POWER_ICONS);
+    return keys[Math.floor(Math.random() * keys.length)];
   }
 
   _isAdjacent(a, b) {
@@ -166,13 +180,16 @@ class Game {
       return;
     }
     this.effects?.playSwap?.();
+
+    // Double‑power swap (both cells are power‑up tiles)
     if (this.board[sel.row][sel.col].powerUp && this.board[tgt.row][tgt.col].powerUp) {
       this._handleDoublePower(sel, tgt);
       this.moves--;
-    } else {
-      this._resolveMatches(groups, sel, tgt);
-      this.moves--;
+      return;
     }
+
+    this._resolveMatches(groups, sel, tgt);
+    this.moves--;
   }
 
   _swapCells(a, b) {
@@ -261,7 +278,7 @@ class Game {
       groups = this._findMatches();
       chainCount++;
     }
-    // grant bonus for chain
+    // Bonus for chains
     if (chainCount > 1) {
       this.inventory.bomb++;
       this.onEvent?.('reward', { });
@@ -397,5 +414,3 @@ class Game {
     }
   }
 }
-
-export { Game };

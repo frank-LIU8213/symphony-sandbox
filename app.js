@@ -18,6 +18,7 @@ const colorCount = document.getElementById('color-count');
 const restartBtn = document.getElementById('restart-btn');
 const shuffleBtn = document.getElementById('shuffle-btn');
 const canvasEl = document.getElementById('effects-canvas');
+const leaderboardEl = document.getElementById('leaderboard');
 
 const ctx = canvasEl.getContext('2d');
 let particles = [];
@@ -106,9 +107,14 @@ function handleCellClick(row, col) {
 function showResult() {
   const over = game.isGameOver();
   if (over.win) {
-    msgEl.textContent = '🎉 You Win!';
+    updateLeaderboard(game.levelIndex, game.score);
+    renderLeaderboard();
+    const nextIndex = (game.levelIndex + 1 < LEVELS.length) ? game.levelIndex + 1 : 0;
+    const label = (game.levelIndex + 1 < LEVELS.length) ? 'Next Level ➡️' : 'Play Again 🔄';
+    msgEl.innerHTML = `🎉 You Win! ${game.score}<br><button id="next-level-btn">${label}</button>`;
+    document.getElementById('next-level-btn').onclick = () => startLevel(nextIndex);
   } else {
-    msgEl.textContent = '😞 Game Over';
+    msgEl.innerHTML = '😞 Game Over';
   }
 }
 
@@ -116,6 +122,42 @@ function startLevel(levelIdx = 0) {
   game.start(levelIdx);
   render(game);
   msgEl.textContent = '';
+  renderLeaderboard();
+}
+
+// Leaderboard persistence (localStorage)
+function loadLeaderboard() {
+  try {
+    const raw = localStorage.getItem('triple-crush-leaderboard');
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+function saveLeaderboard(lb) {
+  localStorage.setItem('triple-crush-leaderboard', JSON.stringify(lb));
+}
+function updateLeaderboard(levelIdx, score) {
+  const lb = loadLeaderboard();
+  const key = `level${levelIdx}`;
+  if (!lb[key] || score > lb[key]) {
+    lb[key] = score;
+    saveLeaderboard(lb);
+  }
+}
+function renderLeaderboard() {
+  const lb = loadLeaderboard();
+  if (!leaderboardEl) return;
+  const entries = Object.keys(lb).filter(k => k.startsWith('level'));
+  if (entries.length === 0) { leaderboardEl.innerHTML = ''; return; }
+  let html = '<h3>🏆 Leaderboard</h3><ul>';
+  for (let i = 0; i < LEVELS.length; i++) {
+    const key = `level${i}`;
+    const score = lb[key];
+    if (score !== undefined) {
+      html += `<li>Level ${i + 1}: ${score}</li>`;
+    }
+  }
+  html += '</ul>';
+  leaderboardEl.innerHTML = html;
 }
 
 const game = new Game({
