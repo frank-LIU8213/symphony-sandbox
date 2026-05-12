@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✦ 三消2 · Gem Cascade ✦</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    background: radial-gradient(circle at 30% 20%, #0c0b1a, #1f1e2e);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #e5e5ee;
+  }
+
+  .game-container {
+    background: rgba(28, 26, 48, 0.85);
+    backdrop-filter: blur(4px);
+    padding: 24px 32px 32px;
+    border-radius: 36px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06) inset;
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+    transition: all 0.3s;
+  }
+
+  h1 {
+    font-weight: 600;
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #f7971e, #ffd200);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .stats {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 6px 14px;
+    font-size: 0.95rem;
+  }
+
+  .stats span {
+    background: rgba(255,255,255,0.08);
+    padding: 4px 14px;
+    border-radius: 20px;
+  }
+
+  #board {
+    display: grid;
+    gap: 3px;
+    margin: 10px 0 16px;
+    justify-content: center;
+    user-select: none;
+  }
+
+  .cell {
+    width: 52px;
+    height: 52px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .gem {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    transition: transform 0.18s ease, opacity 0.25s ease;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+  }
+
+  .gem.selected {
+    box-shadow: 0 0 0 3px #fff, 0 0 12px #f5d742;
+  }
+
+  .gem.red    { background: radial-gradient(circle at 35% 25%, #ff6b6b, #d63031); }
+  .gem.green  { background: radial-gradient(circle at 35% 25%, #6bcb6b, #27ae60); }
+  .gem.blue   { background: radial-gradient(circle at 35% 25%, #6bb5ff, #2980b9); }
+  .gem.yellow { background: radial-gradient(circle at 35% 25%, #ffe46b, #f1c40f); }
+  .gem.purple { background: radial-gradient(circle at 35% 25%, #c56bff, #8e44ad); }
+  .gem.orange { background: radial-gradient(circle at 35% 25%, #ffb26b, #e67e22); }
+
+  /* special overlays */
+  .gem.special-row::after,
+  .gem.special-col::after,
+  .gem.special-bomb::after,
+  .gem.special-color::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .gem.special-row::after    { background: repeating-linear-gradient(90deg, #fff3 0px, #fff3 4px, transparent 4px, transparent 8px); }
+  .gem.special-col::after    { background: repeating-linear-gradient(0deg, #fff3 0px, #fff3 4px, transparent 4px, transparent 8px); }
+  .gem.special-bomb::after   { background: radial-gradient(circle, #fff6 30%, transparent 70%); }
+  .gem.special-color::after  { background: conic-gradient(#ff6b6b, #6bcb6b, #6bb5ff, #ffe46b, #c56bff, #ffb26b, #ff6b6b); opacity: 0.65; }
+
+  .panel {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    background: rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #e5e5ee;
+    padding: 8px 22px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    font-weight: 500;
+  }
+
+  button:hover { background: rgba(255,255,255,0.18); transform: scale(1.03); }
+  button:active { transform: scale(0.95); }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 99;
+  }
+
+  .overlay.active { display: flex; }
+
+  .overlay-box {
+    background: #252240;
+    padding: 36px 44px;
+    border-radius: 28px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+  }
+
+  .overlay-box h2 { margin-bottom: 12px; font-size: 1.5rem; }
+  .overlay-box p  { margin-bottom: 20px; color: #b8b6cc; }
+
+  .ranking {
+    font-size: 0.85rem;
+    margin: 12px 0 0;
+    color: #b8b6cc;
+  }
+
+  .ranking ol {
+    text-align: left;
+    display: inline-block;
+    padding-left: 20px;
+  }
+
+  .ranking li {
+    margin: 3px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="game-container">
+  <h1>✦ GEM CASCADE ✦</h1>
+
+  <div class="stats">
+    <span>🏆 得分 <b id="score">0</b></span>
+    <span>🎯 目标 <b id="target">500</b></span>
+    <span>🧩 关卡 <b id="level">1</b></span>
+    <span>↺ 步数 <b id="moves">15</b></span>
+  </div>
+
+  <div id="board"></div>
+
+  <div class="panel">
+    <button id="restartBtn">⟳ 重开本关</button>
+    <button id="hintBtn">💡 提示</button>
+  </div>
+
+  <div class="ranking" id="rankingBox">
+    <div><small>🏅 本关前十</small></div>
+    <ol id="rankingList"></ol>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overlayTitle"></h2>
+    <p id="overlayMsg"></p>
+    <button id="overlayBtn">继续</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ====== 音效 (Web Audio) ======
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioCtx;
+  }
+
+  function playTone(freq, duration, type='sine', vol=0.15) {
+    try {
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(vol, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + duration);
+    } catch(_) {}
+  }
+
+  function sfxSwap()       { playTone(440, 0.1); }
+  function sfxMatch(len)   { playTone(660 + len*50, 0.15); }
+  function sfxSpecial()    { playTone(880, 0.2, 'sawtooth', 0.1); }
+  function sfxFail()       { playTone(220, 0.2, 'square', 0.08); }
+  function sfxLevelUp()    { 
+    for(let i=0; i<4; i++) setTimeout(()=>playTone(660+i*110,0.2), i*80);
+  }
+  function sfxGameOver()   { playTone(330, 0.4, 'sawtooth', 0.1); }
+
+  // ====== 常量 ======
+  const COLORS = ['red','green','blue','yellow','purple','orange'];
+  const SPECIAL = { }; // populated later
+
+  // ====== 游戏状态 ======
+  const state = {
+    board: [],          // 2D: { color, special, row, col }
+    size: 8,
+    score: 0,
+    movesLeft: 15,
+    targetScore: 500,
+    level: 1,
+    selected: null,     // { r, c }
+    processing: false,
+    hintPair: null,
+    ranking: loadRanking(),
+  };
+
+  // DOM elements
+  const boardEl  = document.getElementById('board');
+  const scoreEl  = document.getElementById('score');
+  const targetEl = document.getElementById('target');
+  const levelEl  = document.getElementById('level');
+  const movesEl  = document.getElementById('moves');
+  const overlay  = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlayMsg   = document.getElementById('overlayMsg');
+  const overlayBtn   = document.getElementById('overlayBtn');
+  const rankingList  = document.getElementById('rankingList');
+  const restartBtn   = document.getElementById('restartBtn');
+  const hintBtn      = document.getElementById('hintBtn');
+
+  // ====== 本地排名 ======
+  function loadRanking() {
+    try {
+      const raw = localStorage.getItem('gemcascade_ranking');
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }
+
+  function saveRanking() {
+    localStorage.setItem('gemcascade_ranking', JSON.stringify(state.ranking));
+  }
+
+  function updateRankingDisplay() {
+    const list = state.ranking[state.level] || [];
+    rankingList.innerHTML = list.slice(0,10).map(s => `<li>${s} 分</li>`).join('');
+    if (!list.length) rankingList.innerHTML = '<li style="list-style:none;opacity:0.5">暂无记录</li>';
+  }
+
+  function recordScore(score) {
+    const arr = state.ranking[state.level] || [];
+    arr.push(score);
+    arr.sort((a,b)=>b-a);
+    if (arr.length > 10) arr.length = 10;
+    state.ranking[state.level] = arr;
+    saveRanking();
+    updateRankingDisplay();
+  }
+
+  // ====== 工具函数 ======
+  function randomColor() { return COLORS[Math.floor(Math.random() * COLORS.length)]; }
+
+  function freshGem(color, special='') {
+    return { color: color || randomColor(), special };
+  }
+
+  // ====== 棋盘生成 (保证初始无匹配) ======
+  function generateBoard(size) {
+    const board = [];
+    for (let r=0; r<size; r++) {
+      const row = [];
+      for (let c=0; c<size; c++) {
+        let color;
+        do {
+          color = randomColor();
+        } while ( matchLengthAt(board, r, c, color) >= 3 );
+        row.push(freshGem(color));
+      }
+      board.push(row);
+    }
+    return board;
+  }
+
+  function matchLengthAt(board, row, col, color) {
+    // horizontal left
+    let h = 1;
+    for (let c=col-1; c>=0 && board[row][c].color===color; c--) h++;
+    for (let c=col+1; c<board.length && board[row][c].color===color; c++) h++;
+    if (h >= 3) return h;
+    // vertical
+    let v = 1;
+    for (let r=row-1; r>=0 && board[r][col].color===color; r--) v++;
+    for (let r=row+1; r<board.length && board[r][col].color===color; r++) v++;
+    if (v >= 3) return v;
+    return 0;
+  }
+
+  // ====== 匹配检测 ======
+  function findMatches() {
+    const size = state.board.length;
+    const matched = new Set(); // store "r,c"
+    // horizontal
+    for (let r=0; r<size; r++) {
+      let start = 0;
+      while (start < size) {
+        let end = start;
+        while (end+1 < size && state.board[r][end+1].color === state.board[r][start].color) end++;
+        const len = end - start + 1;
+        if (len >= 3) {
+          for (let c=start; c<=end; c++) matched.add(`${r},${c}`);
+        }
+        start = end + 1;
+      }
+    }
+    // vertical
+    for (let c=0; c<size; c++) {
+      let start = 0;
+      while (start < size) {
+        let end = start;
+        while (end+1 < size && state.board[end+1][c].color === state.board[start][c].color) end++;
+        const len = end - start + 1;
+        if (len >= 3) {
+          for (let r=start; r<=end; r++) matched.add(`${r},${c}`);
+        }
+        start = end + 1;
+      }
+    }
+    return matched;
+  }
+
+  // 消除 + 产生特效宝石
+  function removeMatches(matchedSet) {
+    const size = state.board.length;
+    // cluster by rows for special creation
+    const toRemove = [];
+    const rowCells = new Map(); // row -> array of col
+    for (const key of matchedSet) {
+      const [r,c] = key.split(',').map(Number);
+      toRemove.push({r,c});
+      if (!rowCells.has(r)) rowCells.set(r, []);
+      rowCells.get(r).push(c);
+    }
+    // determine if any match length >=4  for special
+    // we scan linearly, but for simplicity: if the matched set has at least 4 cells in a continuous line
+    // we'll just pick the first cell in each group to become special
+    const specialCandidates = [];
+    // horizontal clusters (reuse above)
+    for (let r=0; r<size; r++) {
+      let start = 0;
+      while (start < size) {
+        let end = start;
+        while (end+1 < size && matchedSet.has(`${r},${end+1}`) && state.board[r][end+1].color === state.board[r][start].color) end++;
+        const len = end - start + 1;
+        if (len >= 4) {
+          const mid = Math.floor((start+end)/2);
+          specialCandidates.push({r, c: mid, len, dir: 'row'});
+        }
+        start = end + 1;
+      }
+    }
+    // vertical
+    for (let c=0; c<size; c++) {
+      let start = 0;
+      while (start < size) {
+        let end = start;
+        while (end+1 < size && matchedSet.has(`${end+1},${c}`) && state.board[end+1][c].color === state.board[start][c].color) end++;
+        const len = end - start + 1;
+        if (len >= 4) {
+          const mid = Math.floor((start+end)/2);
+          specialCandidates.push({r: mid, c, len, dir: 'col'});
+        }
+        start = end + 1;
+      }
+    }
+
+    // assign special gems: keep one cell in match, mark it special, and remove rest
+    const keepForSpecial = new Map(); // "r,c" -> special type
+    for (const sc of specialCandidates) {
+      const key = `${sc.r},${sc.c}`;
+      if (!keepForSpecial.has(key)) {
+        let type = 'bomb';
+        if (sc.len >= 5) type = 'color';
+        else if (sc.dir === 'row') type = 'row';
+        else if (sc.dir === 'col') type = 'col';
+        keepForSpecial.set(key, type);
+      }
+    }
+
+    // compute score
+    const basePoints = 10;
+    state.score += toRemove.length * basePoints;
+    // apply specials
+    for (const [key, type] of keepForSpecial) {
+      const [r,c] = key.split(',').map(Number);
+      state.board[r][c].special = type;
+    }
+
+    // remove (set to null)
+    for (const {r,c} of toRemove) {
+      if (!keepForSpecial.has(`${r},${c}`)) {
+        state.board[r][c] = null;
+      }
+    }
+    sfxMatch(toRemove.length);
+    return toRemove.length; // count removed
+  }
+
+  // ====== 下落 & 填充 ======
+  function dropAndFill() {
+    const size = state.board.length;
+    let dropped = false;
+    for (let c=0; c<size; c++) {
+      let writeRow = size-1;
+      for (let r=size-1; r>=0; r--) {
+        if (state.board[r][c] !== null) {
+          if (r !== writeRow) {
+            state.board[writeRow][c] = state.board[r][c];
+            state.board[r][c] = null;
+            dropped = true;
+          }
+          writeRow--;
+        }
+      }
+      // fill
+      for (let r=writeRow; r>=0; r--) {
+        state.board[r][c] = freshGem();
+        dropped = true;
+      }
+    }
+    return dropped;
+  }
+
+  // ====== 棋盘渲染 (动画省略, 使用即时DOM更新) ======
+  function renderBoard() {
+    const size = state.board.length;
+    boardEl.style.gridTemplateColumns = `repeat(${size}, 52px)`;
+    boardEl.style.gridTemplateRows = `repeat(${size}, 52px)`;
+    boardEl.innerHTML = '';
+    for (let r=0; r<size; r++) {
+      for (let c=0; c<size; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+        const gem = state.board[r][c];
+        if (gem) {
+          const gemEl = document.createElement('div');
+          gemEl.className = `gem ${gem.color}`;
+          if (gem.special) gemEl.classList.add('special-'+gem.special);
+          if (state.selected && state.selected.r===r && state.selected.c===c) {
+            gemEl.classList.add('selected');
+          }
+          cell.appendChild(gemEl);
+        }
+        boardEl.appendChild(cell);
+      }
+    }
+    updateStats();
+  }
+
+  function updateStats() {
+    scoreEl.textContent  = state.score;
+    targetEl.textContent = state.targetScore;
+    levelEl.textContent  = state.level;
+    movesEl.textContent  = state.movesLeft;
+    // highlight moves if low
+    movesEl.style.color = state.movesLeft <= 3 ? '#ff7675' : '';
+  }
+
+  // ====== 提示 ======
+  function findHint() {
+    const size = state.board.length;
+    for (let r=0; r<size; r++) {
+      for (let c=0; c<size; c++) {
+        // try right swap
+        if (c+1 < size) {
+          swapGems(r,c, r,c+1);
+          if (findMatches().size > 0) {
+            swapGems(r,c, r,c+1); // revert
+            return {r,c, nr:r, nc:c+1};
+          }
+          swapGems(r,c, r,c+1);
+        }
+        // try down swap
+        if (r+1 < size) {
+          swapGems(r,c, r+1,c);
+          if (findMatches().size > 0) {
+            swapGems(r,c, r+1,c);
+            return {r,c, nr:r+1, nc:c};
+          }
+          swapGems(r,c, r+1,c);
+        }
+      }
+    }
+    return null;
+  }
+
+  function swapGems(r1,c1, r2,c2) {
+    const tmp = state.board[r1][c1];
+    state.board[r1][c1] = state.board[r2][c2];
+    state.board[r2][c2] = tmp;
+  }
+
+  // ====== 交换处理 ======
+  function trySwap(r1,c1, r2,c2) {
+    if (state.processing) return;
+    state.processing = true;
+    state.selected = null;
+    swapGems(r1,c1, r2,c2);
+    // check matches
+    const matches = findMatches();
+    if (matches.size === 0) {
+      // undo swap with animation
+      sfxFail();
+      swapGems(r1,c1, r2,c2);
+      renderBoard();
+      state.processing = false;
+      return;
+    }
+    sfxSwap();
+    state.movesLeft--;
+    // cascade loop
+    function cascade() {
+      const matches2 = findMatches();
+      if (matches2.size === 0) {
+        // no more matches, check win/loss
+        renderBoard();
+        if (state.score >= state.targetScore) {
+          levelUp();
+        } else if (state.movesLeft <= 0) {
+          gameOver();
+        }
+        state.processing = false;
+        return;
+      }
+      // remove matches, produce specials
+      removeMatches(matches2);
+      dropAndFill();
+      renderBoard();
+      // small delay for visual
+      setTimeout(cascade, 200);
+    }
+    // trigger cascade after rendering with drop animation
+    setTimeout(cascade, 150);
+  }
+
+  // ====== 点击事件 ======
+  function onCellClick(e) {
+    const cell = e.target.closest('.cell');
+    if (!cell) return;
+    const r = +cell.dataset.r;
+    const c = +cell.dataset.c;
+    const gem = state.board[r][c];
+    if (!gem) return;
+
+    // if gem has special, activate
+    if (gem.special) {
+      activateSpecial(r,c);
+      return;
+    }
+
+    if (state.selected === null) {
+      state.selected = {r, c};
+      renderBoard();
+      return;
+    }
+
+    const sel = state.selected;
+    if (sel.r===r && sel.c===c) {
+      // deselect
+      state.selected = null;
+      renderBoard();
+      return;
+    }
+
+    // check adjacency
+    const dr = Math.abs(sel.r - r);
+    const dc = Math.abs(sel.c - c);
+    if ((dr===1 && dc===0) || (dr===0 && dc===1)) {
+      trySwap(sel.r, sel.c, r, c);
+    } else {
+      // select new
+      state.selected = {r,c};
+      renderBoard();
+    }
+  }
+
+  // ====== 特殊技能激活 ======
+  function activateSpecial(row, col) {
+    if (state.processing) return;
+    state.processing = true;
+    sfxSpecial();
+    const size = state.board.length;
+    const gem = state.board[row][col];
+    const type = gem.special;
+    const color = gem.color;
+    const toRemove = new Set();
+
+    switch(type) {
+      case 'row':
+        for (let c=0; c<size; c++) toRemove.add(`${row},${c}`);
+        break;
+      case 'col':
+        for (let r=0; r<size; r++) toRemove.add(`${r},${col}`);
+        break;
+      case 'bomb':
+        for (let dr=-1; dr<=1; dr++) {
+          for (let dc=-1; dc<=1; dc++) {
+            const r = row+dr, c = col+dc;
+            if (r>=0 && r<size && c>=0 && c<size) toRemove.add(`${r},${c}`);
+          }
+        }
+        break;
+      case 'color':
+        for (let r=0; r<size; r++) {
+          for (let c=0; c<size; c++) {
+            if (state.board[r][c] && state.board[r][c].color === color) toRemove.add(`${r},${c}`);
+          }
+        }
+        break;
+    }
+    // remove all marked cells
+    for (const key of toRemove) {
+      const [r,c] = key.split(',').map(Number);
+      state.board[r][c] = null;
+    }
+    state.score += toRemove.size * 10;
+    state.movesLeft--;
+    dropAndFill();
+    renderBoard();
+
+    // cascade
+    function cascade() {
+      const matches = findMatches();
+      if (matches.size === 0) {
+        if (state.score >= state.targetScore) levelUp();
+        else if (state.movesLeft <= 0) gameOver();
+        state.processing = false;
+        return;
+      }
+      removeMatches(matches);
+      dropAndFill();
+      renderBoard();
+      setTimeout(cascade, 200);
+    }
+    setTimeout(cascade, 150);
+  }
+
+  // ====== 关卡管理 ======
+  function levelUp() {
+    sfxLevelUp();
+    recordScore(state.score);
+    const newLevel = state.level + 1;
+    showOverlay(`✨ 通关第 ${state.level} 关！`, `得分 ${state.score} / ${state.targetScore}`, '下一关', ()=>{
+      startLevel(newLevel);
+    });
+  }
+
+  function gameOver() {
+    sfxGameOver();
+    recordScore(state.score);
+    showOverlay('😵 步数用尽', `得分 ${state.score} / ${state.targetScore}`, '重试本关', ()=>{
+      startLevel(state.level);
+    });
+  }
+
+  function showOverlay(title, msg, btnText, callback) {
+    overlayTitle.textContent = title;
+    overlayMsg.textContent   = msg;
+    overlayBtn.textContent   = btnText;
+    overlay.classList.add('active');
+    overlayBtn.onclick = ()=>{
+      overlay.classList.remove('active');
+      callback();
+    };
+  }
+
+  function startLevel(level) {
+    state.level = level;
+    state.size  = Math.min(7 + Math.floor(level/2), 9);
+    state.board = generateBoard(state.size);
+    state.score = 0;
+    state.targetScore = 400 * level;
+    state.movesLeft = Math.max(10, 18 - level);
+    state.selected = null;
+    state.processing = false;
+    state.hintPair = null;
+    renderBoard();
+    updateRankingDisplay();
+  }
+
+  // ====== 初始化 ======
+  function init() {
+    // levels from local storage?
+    const savedLevel = localStorage.getItem('gemcascade_level');
+    state.level = savedLevel ? +savedLevel : 1;
+    startLevel(state.level);
+
+    boardEl.addEventListener('click', onCellClick);
+
+    restartBtn.addEventListener('click', ()=>{
+      if (!state.processing) startLevel(state.level);
+    });
+
+    hintBtn.addEventListener('click', ()=>{
+      if (state.processing) return;
+      const hint = findHint();
+      if (hint) {
+        state.selected = {r: hint.r, c: hint.c};
+        renderBoard();
+      } else {
+        sfxFail();
+      }
+    });
+
+    // save level progress on win/ change
+    window.addEventListener('beforeunload', ()=>{
+      localStorage.setItem('gemcascade_level', state.level);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
