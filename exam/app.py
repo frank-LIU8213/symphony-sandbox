@@ -147,20 +147,20 @@ def exam():
         db = get_db()
         question_ids = json.loads(session['exam_questions'])
         total = len(question_ids)
-        score = 0
+        correct = 0
         for qid in question_ids:
             q = db.execute('SELECT * FROM questions WHERE id = ?', (qid,)).fetchone()
             user_ans = answers.get(f'q_{qid}', '').strip().lower()
             correct_ans = q['answer'].strip().lower()
             if user_ans == correct_ans:
-                score += 1
-        score = round((score / total) * 100, 2) if total > 0 else 0
+                correct += 1
+        score = round((correct / total) * 100, 2) if total > 0 else 0
         
         db.execute('INSERT INTO attempts (user_id, question_ids, answers, score, total) VALUES (?, ?, ?, ?, ?)',
                    (session['user_id'], json.dumps(question_ids), json.dumps(answers), score, total))
         db.commit()
         session.pop('exam_questions', None)
-        return render_template('result.html', score=score, total=total)
+        return render_template('result.html', score=score, total=total, correct=correct)
 
     db = get_db()
     all_questions = db.execute('SELECT * FROM questions').fetchall()

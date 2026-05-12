@@ -30,3 +30,20 @@ question,answer,options,type
 What is 2+2?,4,1,2,3,4,mcq
 What is the capital of France?,Paris,,,short
 ```
+
+## Quick Start with the Sample Question Bank
+
+This repository includes a ready‑to‑use CSV file (`sample_questions.csv`) with 20 general‑knowledge questions. Follow the steps below to see the system in action:
+
+1. Set up the application as described in the **Setup** section.
+2. Register a new account and choose the **admin** role.
+3. Log in as admin; you’ll see the Admin Dashboard.
+4. Click **Upload New Questions** (or navigate to `/upload`).
+5. Choose the file `sample_questions.csv` from the `exam` folder, then click **Upload**.
+6. After the upload completes, log out and register a **student** account.
+7. Log in as student; click **Start Exam**.
+8. The system randomly picks **5 questions** from the bank. Answer them and submit.
+9. You will see your **percentage score** and the **number of correct answers**.
+10. You can also visit **History** (from the navigation bar) to review past attempts.
+
+You can replace `sample_questions.csv` with your own CSV file at any time using the same upload page.
