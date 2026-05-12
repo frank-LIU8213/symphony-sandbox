@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Triple Crush</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>✨ Triple Crush ✨</h1>
+      <div class="info">
+        <div>Score: <span id="score">0</span></div>
+        <div>Moves: <span id="moves">0</span></div>
+        <div>Target: <span id="target">0</span></div>
+      </div>
+      <div class="powerups">
+        <button id="bomb-btn" title="Bomb (3×3)"><span class="icon">💣</span><span id="bomb-count">0</span></button>
+        <button id="row-btn" title="Row clear"><span class="icon">↔️</span><span id="row-count">0</span></button>
+        <button id="col-btn" title="Column clear"><span class="icon">↕️</span><span id="col-count">0</span></button>
+        <button id="color-btn" title="Clear color"><span class="icon">🎨</span><span id="color-count">0</span></button>
+      </div>
+      <div>
+        <button id="restart-btn">Restart</button>
+        <button id="shuffle-btn">Shuffle</button>
+      </div>
+      <div id="message"></div>
+    </header>
+    <div id="board"></div>
+    <div id="leaderboard-container">
+      <div id="leaderboard"></div>
+    </div>
+    <canvas id="effects-canvas"></canvas>
+  </div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
