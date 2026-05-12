@@ -192,11 +192,58 @@
     transform: translateY(2px);
     box-shadow: 0 2px 0 #6b5b4f;
   }
+  /* 方向按钮区域 */
+  #dir-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+  #dir-controls .row {
+    display: flex;
+    gap: 6px;
+  }
+  .dir-btn {
+    width: 64px;
+    height: 64px;
+    border: none;
+    border-radius: 12px;
+    background: #8f7a66;
+    color: #f9f6f2;
+    font-size: 28px;
+    font-weight: 700;
+    cursor: pointer;
+    outline: none;
+    box-shadow: 0 4px 0 #6b5b4f;
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .dir-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #6b5b4f;
+  }
+  .dir-btn:hover:not(:disabled) {
+    background: #9f8b76;
+  }
+  .dir-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+    box-shadow: 0 2px 0 #6b5b4f;
+    transform: translateY(2px);
+  }
   @media (max-width: 400px) {
     h1 { font-size: 32px; }
     .score-value { font-size: 20px; }
     #controls button, #levelSelect { font-size: 13px; padding: 6px 12px; }
     #app { padding: 16px 16px 12px; }
+    .dir-btn { width: 52px; height: 52px; font-size: 22px; }
   }
 </style>
 </head>
@@ -214,6 +261,17 @@
     <div id="gameOver">
       <h2 id="overTitle">Game Over</h2>
       <button class="restart-btn" id="restartBtn">再来一局</button>
+    </div>
+  </div>
+  <!-- 方向按钮 -->
+  <div id="dir-controls">
+    <div class="row">
+      <button class="dir-btn" data-dir="up" aria-label="上">↑</button>
+    </div>
+    <div class="row">
+      <button class="dir-btn" data-dir="left" aria-label="左">←</button>
+      <button class="dir-btn" data-dir="down" aria-label="下">↓</button>
+      <button class="dir-btn" data-dir="right" aria-label="右">→</button>
     </div>
   </div>
   <div id="controls">
@@ -727,6 +785,14 @@
     processMove(dir);
   }
 
+  // 方向按钮点击
+  function handleDirClick(e) {
+    const btn = e.currentTarget;
+    const dir = btn.dataset.dir;
+    if (!dir) return;
+    processMove(dir);
+  }
+
   // ─── 挂载 ──────────────────────────────────────────────────
   document.addEventListener('keydown', handleKey);
   gridEl.addEventListener('touchstart', handleTouchStart, { passive: true });
@@ -752,6 +818,13 @@
   restartBtn.addEventListener('click', () => {
     ensureAudio();
     resetCurrentLevel();
+  });
+
+  // 绑定方向按钮
+  document.querySelectorAll('.dir-btn').forEach(btn => {
+    btn.addEventListener('click', handleDirClick);
+    // 防止双击选中文字
+    btn.addEventListener('mousedown', e => e.preventDefault());
   });
 
   // 启动默认关卡
