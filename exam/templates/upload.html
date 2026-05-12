@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Upload Questions{% endblock %}
+{% block content %}
+<h2>Upload Questions</h2>
+<p>Upload a CSV file with columns: <code>question</code>, <code>answer</code>, <code>options</code> (optional), <code>type</code> (optional).</p>
+<form method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+        <label>Select CSV File</label>
+        <input type="file" name="file" accept=".csv" required>
+    </div>
+    <button type="submit" class="btn">Upload</button>
+</form>
+{% endblock %}
