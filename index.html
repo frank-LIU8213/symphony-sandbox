@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power Snake — 炫酷贪食蛇</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        canvas {
+            border: 2px solid #333;
+            box-shadow: 0 0 30px rgba(0,255,100,0.25);
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+
+        const TILE_COUNT = 20;
+        const CELL_SIZE = 30;
+        const CANVAS_SIZE = TILE_COUNT * CELL_SIZE;
+        canvas.width = CANVAS_SIZE;
+        canvas.height = CANVAS_SIZE;
+
+        const BASE_SPEED = 130;          // milliseconds per move
+        const ABILITY_DURATION = 5000;   // 5 seconds
+
+        // ---------- game state ----------
+        let snake = [
+            { x: 10, y: 10 },
+            { x: 9, y: 10 },
+            { x: 8, y: 10 }
+        ];
+        let direction = { x: 1, y: 0 };
+        let nextDirection = { x: 1, y: 0 };
+
+        let food = null;
+        let score = 0;
+        let gameRunning = true;
+        let moveAccum = 0;               // ms accumulator for tick-based movement
+
+        // ability timers (Date.now())
+        let speedEnd = 0;
+        let invincibleEnd = 0;
+        let scoreX2End = 0;
+
+        let particles = [];              // burst particles on food eat
+
+        let lastTime = performance.now();
+
+        // ---------- food ----------
+        const FOOD_TYPES = ['speed', 'invincible', 'shrink', 'grow', 'score2x'];
+        const FOOD_COLORS = ['#FFA500', '#00FFFF', '#FF4444', '#44FF44', '#FFD700'];
+
+        function spawnFood() {
+            const idx = Math.floor(Math.random() * FOOD_TYPES.length);
+            let pos;
+            do {
+                pos = {
+                    x: Math.floor(Math.random() * TILE_COUNT),
+                    y: Math.floor(Math.random() * TILE_COUNT)
+                };
+            } while (snake.some(seg => seg.x === pos.x && seg.y === pos.y));
+            food = {
+                x: pos.x,
+                y: pos.y,
+                type: FOOD_TYPES[idx],
+                color: FOOD_COLORS[idx]
+            };
+        }
+        spawnFood();
+
+        // ---------- restart ----------
+        function restart() {
+            snake = [
+                { x: 10, y: 10 },
+                { x: 9, y: 10 },
+                { x: 8, y: 10 }
+            ];
+            direction = { x: 1, y: 0 };
+            nextDirection = { x: 1, y: 0 };
+            score = 0;
+            gameRunning = true;
+            moveAccum = 0;
+            speedEnd = 0;
+            invincibleEnd = 0;
+            scoreX2End = 0;
+            particles = [];
+            spawnFood();
+            lastTime = performance.now();
+        }
+
+        // ---------- particles ----------
+        function spawnParticles(x, y, color) {
+            const cx = x * CELL_SIZE + CELL_SIZE / 2;
+            const cy = y * CELL_SIZE + CELL_SIZE / 2;
+            for (let i = 0; i < 12; i++) {
+                particles.push({
+                    x: cx,
+                    y: cy,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    life: 1,
+                    color
+                });
+            }
+        }
+
+        // ---------- abilities ----------
+        function applyFoodEffect(type) {
+            let points = 10;
+            if (Date.now() < scoreX2End) points *= 2;
+            score += points;
+
+            switch (type) {
+                case 'speed':
+                    speedEnd = Date.now() + ABILITY_DURATION;
+                    break;
+                case 'invincible':
+                    invincibleEnd = Date.now() + ABILITY_DURATION;
+                    break;
+                case 'shrink':
+                    if (snake.length > 1) {
+                        const removeCount = Math.min(
+                            snake.length - 1,
+                            Math.floor(snake.length / 2)
+                        );
+                        snake.splice(-removeCount);
+                    }
+                    break;
+                case 'grow':
+                    // add 3 extra segments on top of the natural growth from eating
+                    {
+                        const last = snake[snake.length - 1];
+                        for (let i = 0; i < 3; i++) {
+                            snake.push({ ...last });
+                        }
+                    }
+                    break;
+                case 'score2x':
+                    scoreX2End = Date.now() + ABILITY_DURATION;
+                    break;
+                default: break;
+            }
+        }
+
+        // ---------- move ----------
+        function move() {
+            direction = { ...nextDirection };   // commit queued direction
+            const head = {
+                x: snake[0].x + direction.x,
+                y: snake[0].y + direction.y
+            };
+
+            const invincible = Date.now() < invincibleEnd;
+
+            if (!invincible) {
+                // wall collision
+                if (
+                    head.x < 0 || head.x >= TILE_COUNT ||
+                    head.y < 0 || head.y >= TILE_COUNT
+                ) {
+                    gameRunning = false;
+                    return;
+                }
+                // self collision
+                if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+                    gameRunning = false;
+                    return;
+                }
+            }
+
+            snake.unshift(head);
+
+            // check food
+            if (food && head.x === food.x && head.y === food.y) {
+                applyFoodEffect(food.type);
+                spawnParticles(food.x, food.y, food.color);
+                spawnFood();
+                // do NOT pop tail → natural growth from eating
+            } else {
+                snake.pop();
+            }
+        }
+
+        // ---------- update ----------
+        function update(dt) {
+            if (!gameRunning) return;
+
+            moveAccum += dt;
+            const currentSpeed =
+                Date.now() < speedEnd ? BASE_SPEED * 0.5 : BASE_SPEED;
+
+            while (moveAccum >= currentSpeed) {
+                moveAccum -= currentSpeed;
+                move();
+                if (!gameRunning) break; // stop ticking after death
+            }
+
+            // particles
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+            });
+        }
+
+        // ---------- draw ----------
+        function draw() {
+            ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+            // faint grid
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i <= TILE_COUNT; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * CELL_SIZE, 0);
+                ctx.lineTo(i * CELL_SIZE, CANVAS_SIZE);
+                ctx.stroke();
+
+                ctx.moveTo(0, i * CELL_SIZE);
+                ctx.lineTo(CANVAS_SIZE, i * CELL_SIZE);
+                ctx.stroke();
+            }
+
+            // food
+            if (food) {
+                ctx.save();
+                ctx.shadowColor = food.color;
+                ctx.shadowBlur = 14;
+                ctx.fillStyle = food.color;
+                const cx = food.x * CELL_SIZE + CELL_SIZE / 2;
+                const cy = food.y * CELL_SIZE + CELL_SIZE / 2;
+                ctx.beginPath();
+                ctx.arc(cx, cy, CELL_SIZE / 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // snake
+            snake.forEach((seg, idx) => {
+                ctx.save();
+                const invincible = Date.now() < invincibleEnd;
+                const speedActive = Date.now() < speedEnd;
+
+                let baseColor;
+                if (invincible) {
+                    // cycling hue for invincibility
+                    const hue = (Date.now() / 100) % 360;
+                    baseColor = `hsl(${hue}, 100%, 50%)`;
+                } else if (speedActive) {
+                    baseColor = 'rgb(255,165,0)';
+                } else {
+                    baseColor = 'rgb(0,255,100)';
+                }
+
+                const alpha = Math.max(0.2, 1 - idx * 0.03); // tail fade
+                ctx.fillStyle = baseColor.replace(')', `,${alpha})`).replace('hsl', 'hsla');
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.shadowBlur = 10;
+
+                ctx.beginPath();
+                ctx.fillRect(
+                    seg.x * CELL_SIZE + 2,
+                    seg.y * CELL_SIZE + 2,
+                    CELL_SIZE - 4,
+                    CELL_SIZE - 4
+                );
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // particles
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // ---------- HUD ----------
+            // score
+            ctx.fillStyle = '#fff';
+            ctx.font = '20px "Courier New", monospace';
+            ctx.fillText(`Score: ${score}`, 10, 30);
+
+            let yOffset = 60;
+            const activeEffects = [];
+            if (Date.now() < speedEnd) activeEffects.push({ label: 'SPEED', color: '#FFA500' });
+            if (Date.now() < invincibleEnd) activeEffects.push({ label: 'INVINCIBLE', color: '#00FFFF' });
+            if (Date.now() < scoreX2End) activeEffects.push({ label: 'SCORE2X', color: '#FFD700' });
+
+            activeEffects.forEach(ef => {
+                ctx.fillStyle = ef.color;
+                ctx.font = '16px "Courier New", monospace';
+                ctx.fillText(ef.label, 10, yOffset);
+                yOffset += 20;
+            });
+
+            // game‑over overlay
+            if (!gameRunning) {
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '30px "Courier New", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', CANVAS_SIZE / 2, CANVAS_SIZE / 2 - 20);
+
+                ctx.font = '18px "Courier New", monospace';
+                ctx.fillText('Press Space or Enter to restart', CANVAS_SIZE / 2, CANVAS_SIZE / 2 + 20);
+                ctx.textAlign = 'start';
+            }
+        }
+
+        // ---------- keyboard ----------
+        window.addEventListener('keydown', e => {
+            if (!gameRunning) {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    restart();
+                }
+                return;
+            }
+
+            switch (e.key) {
+                case 'ArrowUp': case 'w':
+                    if (direction.y === 0) nextDirection = { x: 0, y: -1 };
+                    break;
+                case 'ArrowDown': case 's':
+                    if (direction.y === 0) nextDirection = { x: 0, y: 1 };
+                    break;
+                case 'ArrowLeft': case 'a':
+                    if (direction.x === 0) nextDirection = { x: -1, y: 0 };
+                    break;
+                case 'ArrowRight': case 'd':
+                    if (direction.x === 0) nextDirection = { x: 1, y: 0 };
+                    break;
+                default: break;
+            }
+        });
+
+        // prevent page scroll on arrow keys
+        window.addEventListener('keydown', e => {
+            if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // ---------- game loop ----------
+        function gameLoop(now) {
+            const dt = now - lastTime;
+            lastTime = now;
+            update(dt);
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
