@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>番茄钟 · Pomodoro</title>
+  <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+  <!-- 背景层（由 w4 生成图片，w1 通过 CSS 引入，此处仅占位） -->
+  <div class="background-layer" id="background-layer"></div>
+
+  <!-- 主容器 -->
+  <div class="pomodoro-container">
+    <!-- 计时器区块 -->
+    <section class="timer-section" aria-label="番茄钟计时器">
+      <!-- 圆形进度环 + 时间显示 -->
+      <div class="progress-ring-wrapper">
+        <svg class="progress-ring" viewBox="0 0 200 200" width="200" height="200" aria-hidden="true">
+          <!-- 底部轨道 -->
+          <circle cx="100" cy="100" r="80" fill="none"
+                  stroke="rgba(255,255,255,0.15)" stroke-width="8" />
+          <!-- 前景进度弧（由 JS 控制偏移量） -->
+          <circle id="progress-ring-fg" cx="100" cy="100" r="80" fill="none"
+                  stroke="#FF9500" stroke-width="8" stroke-linecap="round"
+                  stroke-dasharray="502.65" stroke-dashoffset="0"
+                  transform="rotate(-90 100 100)" />
+          <!-- 剩余时间文字 -->
+          <text id="timer-display" x="100" y="110" text-anchor="middle" dominant-baseline="middle"
+                font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+                font-size="28" fill="#FFFFFF">25:00</text>
+        </svg>
+      </div>
+
+      <!-- 当前会话信息 -->
+      <div class="session-info">
+        <span class="session-label" id="session-label">专注</span>
+        <span class="session-count" id="session-count">1 / 4</span>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="button-group">
+        <button id="start-pause-btn" class="btn-primary">开始</button>
+        <button id="reset-btn" class="btn-secondary">重置</button>
+      </div>
+    </section>
+
+    <!-- 底部统计区 -->
+    <footer class="footer-stats">
+      <div class="pomodoro-count-display">
+        <span class="pomodoro-label">已完成番茄</span>
+        <span class="pomodoro-count" id="pomodoro-count">0</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- 音效脚本（先于主逻辑加载，以便 app.js 可以依赖其导出的全局对象） -->
+  <script src="scripts/sound.js"></script>
+  <!-- 主逻辑（计时器状态管理、UI 更新） -->
+  <script src="scripts/app.js"></script>
+</body>
+</html>
