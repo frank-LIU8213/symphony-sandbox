@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>番茄钟</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* 背景图片由 nano banana 2 生成，请确保 generated-images/pomodoro-bg.png 存在 */
+    background: #f0f0f5 url("generated-images/pomodoro-bg.png") center/cover no-repeat;
+    /* 备用渐变（图片加载失败时） */
+    background-blend-mode: overlay;
+    padding: 16px;
+  }
+
+  /* 如果背景图片不存在，使用柔和渐变兜底 */
+  @supports (background-image: url("generated-images/pomodoro-bg.png")) {
+    body {
+      background: linear-gradient(135deg, #fce4ec 0%, #fff1f0 50%, #fbe9e7 100%);
+    }
+  }
+
+  #app {
+    width: 100%;
+    max-width: 400px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    border-radius: 44px;
+    padding: 40px 28px 32px;
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.08),
+      0 0 0 0.5px rgba(0, 0, 0, 0.06);
+    text-align: center;
+    transition: background 0.3s;
+  }
+
+  /* iOS 状态栏模拟 */
+  .status-bar {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1c1c1e;
+    letter-spacing: -0.3px;
+    margin-bottom: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+  }
+  .status-bar .time {
+    opacity: 0.8;
+  }
+
+  /* 模式切换按钮组 */
+  .mode-picker {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    justify-content: center;
+  }
+  .mode-picker button {
+    flex: 1;
+    padding: 8px 0;
+    border: none;
+    border-radius: 30px;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: #8e8e93;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+  .mode-picker button.active {
+    background: #ffffff;
+    color: #1c1c1e;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  .mode-picker button:not(.active):hover {
+    color: #3a3a3c;
+  }
+
+  /* 计时器圆形 */
+  .timer-circle {
+    position: relative;
+    width: 240px;
+    height: 240px;
+    margin: 0 auto 28px;
+  }
+  .timer-circle svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    filter: drop-shadow(0 2px 12px rgba(255, 107, 107, 0.2));
+  }
+
+  /* 进度条底色 */
+  #progress-ring-bg {
+    stroke: rgba(0, 0, 0, 0.06);
+  }
+
+  /* 进度条 (SVG 动画) */
+  #progress {
+    stroke: #ff6b6b;
+    stroke-linecap: round;
+    stroke-dasharray: 659.734;  /* 周长 ≈ 2π*105 */
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.3s linear;
+    transform: rotate(-90deg);
+    transform-origin: 125px 125px;
+  }
+
+  /* 中间的计时数字 */
+  .time-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 54px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #1c1c1e;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .time-display .colon {
+    margin: 0 -4px;
+  }
+
+  /* 控制按钮 */
+  .controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+  .control-btn {
+    flex: 1;
+    max-width: 140px;
+    padding: 14px 0;
+    border: none;
+    border-radius: 30px;
+    font-size: 17px;
+    font-weight: 600;
+    color: #ffffff;
+    background: #ff6b6b;
+    box-shadow: 0 4px 14px rgba(255, 107, 107, 0.3);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .control-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+  }
+  .control-btn:active {
+    transform: scale(0.96);
+  }
+  .control-btn.secondary {
+    background: #e8e8ed;
+    color: #1c1c1e;
+    box-shadow: none;
+  }
+  .control-btn.secondary:hover {
+    background: #dcdce0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  /* 番茄计数 */
+  .counter {
+    margin-top: 20px;
+    font-size: 13px;
+    color: #8e8e93;
+    letter-spacing: 0.5px;
+  }
+  .counter span {
+    color: #ff6b6b;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- 状态栏 -->
+  <div class="status-bar">
+    <span class="time" id="status-time">9:41</span>
+  </div>
+
+  <!-- 模式选择 -->
+  <div class="mode-picker" id="mode-picker">
+    <button data-mode="pomodoro" class="active">番茄钟</button>
+    <button data-mode="short"  >短休息</button>
+    <button data-mode="long"   >长休息</button>
+  </div>
+
+  <!-- 圆形计时器（SVG 动画） -->
+  <div class="timer-circle">
+    <svg viewBox="0 0 250 250" xmlns="http://www.w3.org/2000/svg">
+      <!-- 背景圆环 -->
+      <circle id="progress-ring-bg" r="105" cx="125" cy="125" fill="none" stroke="#ddd" stroke-width="8"/>
+      <!-- 进度圆环（SVG 动画通过改变 stroke-dashoffset 实现） -->
+      <circle id="progress" r="105" cx="125" cy="125" fill="none" stroke="" stroke-width="8"/>
+    </svg>
+    <div class="time-display" id="time-display">25:00</div>
+  </div>
+
+  <!-- 控制按钮 -->
+  <div class="controls">
+    <button class="control-btn" id="start-btn">开始</button>
+    <button class="control-btn secondary" id="reset-btn">重置</button>
+  </div>
+
+  <!-- 番茄计数 -->
+  <div class="counter">已完成 <span id="pomo-count">0</span> 个番茄</div>
+</div>
+
+<script>
+  (function() {
+    "use strict";
+
+    // ---------- 配置 ----------
+    const TIMES = {
+      pomodoro: 25 * 60,
+      short:     5 * 60,
+      long:     15 * 60,
+    };
+
+    // ---------- DOM 引用 ----------
+    const statusTime     = document.getElementById('status-time');
+    const modeButtons    = document.querySelectorAll('#mode-picker button');
+    const progressCircle = document.getElementById('progress');
+    const timeDisplay    = document.getElementById('time-display');
+    const startBtn       = document.getElementById('start-btn');
+    const resetBtn       = document.getElementById('reset-btn');
+    const pomoCountSpan = document.getElementById('pomo-count');
+
+    // 圆环周长（必须与 CSS 中 stroke-dasharray 一致）
+    const CIRCUMFERENCE = 2 * Math.PI * 105; // ≈ 659.734
+
+    progressCircle.style.strokeDasharray = CIRCUMFERENCE;
+
+    // ---------- 状态 ----------
+    let currentMode  = 'pomodoro';
+    let timeLeft     = TIMES[currentMode];
+    let isRunning    = false;
+    let timerId      = null;
+    let pomoCount    = 0;
+    let beepPlayed   = false;   // 防止同一秒重复播放
+
+    // ---------- 音效 (Web Audio) ----------
+    let audioCtx = null;
+
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      // 某些浏览器需要 resume (iOS)
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playBeep(frequency = 880, duration = 0.15, repeats = 2) {
+      ensureAudioContext();
+      for (let i = 0; i < repeats; i++) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';            // 清晰音色
+        osc.frequency.value = frequency + i * 120; // 轻微上升
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime + i * (duration + 0.08));
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * (duration + 0.08) + duration);
+        osc.start(audioCtx.currentTime + i * (duration + 0.08));
+        osc.stop(audioCtx.currentTime + i * (duration + 0.08) + duration);
+      }
+    }
+
+    function playFinishSound() {
+      // 三重升调提示
+      playBeep(660, 0.12, 3);
+    }
+
+    // ---------- 更新 UI ----------
+    function updateDisplay() {
+      const mins = Math.floor(timeLeft / 60);
+      const secs = timeLeft % 60;
+      timeDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+      // 进度圆环偏移量
+      const progress = 1 - (timeLeft / TIMES[currentMode]);
+      const offset  = CIRCUMFERENCE * progress;
+      progressCircle.style.strokeDashoffset = offset;
+
+      // 更新状态栏时间
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      statusTime.textContent = `${hh}:${mm}`;
+
+      // 更新按钮文字
+      startBtn.textContent = isRunning ? '暂停' : '开始';
+    }
+
+    // ---------- 模式切换 ----------
+    function switchMode(mode) {
+      if (isRunning) {
+        stopTimer();
+      }
+      currentMode = mode;
+      timeLeft = TIMES[mode];
+      beepPlayed = false;
+
+      // 高亮按钮
+      modeButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+
+      // 进度条颜色变化 (不同模式用不同色调)
+      const colors = {
+        pomodoro: '#ff6b6b',
+        short:    '#4caf50',
+        long:     '#42a5f5',
+      };
+      progressCircle.style.stroke = colors[mode] || '#ff6b6b';
+
+      updateDisplay();
+    }
+
+    // ---------- 计时逻辑 ----------
+    function tick() {
+      if (timeLeft > 0) {
+        timeLeft--;
+        beepPlayed = false;
+        updateDisplay();
+      }
+
+      if (timeLeft <= 0 && !beepPlayed) {
+        beepPlayed = true;
+        playFinishSound();
+
+        // 如果是番茄模式，增加计数器
+        if (currentMode === 'pomodoro') {
+          pomoCount++;
+          pomoCountSpan.textContent = pomoCount;
+        }
+
+        // 自动切换到下一个模式（对于番茄模式：如果每 4 个番茄则长休，否则短休）
+        if (currentMode === 'pomodoro') {
+          const nextMode = (pomoCount % 4 === 0) ? 'long' : 'short';
+          switchMode(nextMode);
+        } else {
+          // 休息结束后回到番茄模式
+          switchMode('pomodoro');
+        }
+        // 切换模式后停掉计时器（用户需手动开始）
+        stopTimer();
+        return;
+      }
+    }
+
+    function startTimer() {
+      if (isRunning) return;
+      ensureAudioContext(); // 预唤醒音频上下文
+      isRunning = true;
+      startBtn.textContent = '暂停';
+      timerId = setInterval(tick, 1000);
+    }
+
+    function pauseTimer() {
+      if (!isRunning) return;
+      isRunning = false;
+      startBtn.textContent = '开始';
+      clearInterval(timerId);
+      timerId = null;
+    }
+
+    function stopTimer() {
+      pauseTimer();
+      // timeLeft 和模式不变，只是停止
+    }
+
+    function resetTimer() {
+      if (isRunning) {
+        pauseTimer();
+      }
+      timeLeft = TIMES[currentMode];
+      beepPlayed = false;
+      updateDisplay();
+    }
+
+    // ---------- 事件绑定 ----------
+    // 模式按钮
+    modeButtons.forEach(btn => {
+      btn.addEventListener('click', function() {
+        switchMode(this.dataset.mode);
+      });
+    });
+
+    // 开始 / 暂停
+    startBtn.addEventListener('click', function() {
+      if (isRunning) {
+        pauseTimer();
+      } else {
+        // 如果时间已到（0），重置为当前模式初始时间
+        if (timeLeft <= 0) {
+          timeLeft = TIMES[currentMode];
+          beepPlayed = false;
+          updateDisplay();
+        }
+        startTimer();
+      }
+    });
+
+    // 重置
+    resetBtn.addEventListener('click', resetTimer);
+
+    // ---------- 初始化 ----------
+    // 默认：pomodoro 模式
+    switchMode('pomodoro');
+    pomoCountSpan.textContent = pomoCount;
+
+    // 每 30 秒更新时间显示（状态栏）
+    setInterval(() => {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      statusTime.textContent = `${hh}:${mm}`;
+    }, 30000);
+
+    // 注册点击唤醒音频上下文（iOS Safari 要求用户交互）
+    document.addEventListener('click', ensureAudioContext, { once: true });
+  })();
+</script>
+
+<!--
+  说明：
+  - 背景图由 nano banana 2 生成，路径 generated-images/pomodoro-bg.png。
+  - 如果文件尚未生成，浏览器会显示备用渐变背景。
+  - 音效使用 Web Audio API 生成，无需外部音频文件。
+  - SVG 进度动画通过修改 stroke-dashoffset 实现。
+-->
+</body>
+</html>
