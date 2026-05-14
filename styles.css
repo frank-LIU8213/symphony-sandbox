@@ -1,0 +1,306 @@
+/* Base styles – ownership: w_design */
+/* Claude‑style warm terracotta palette with gentle gradients */
+
+:root {
+  --claude-bg: #faf5ef;
+  --claude-surface: #fffcf8;
+  --claude-accent: #b15b3a;
+  --claude-text: #2c2416;
+  --claude-muted: #8a7a6a;
+  --claude-border: #e8ddd0;
+  --claude-radius: 12px;
+  --claude-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --claude-font: 'system-ui', -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--claude-font);
+  margin: 0;
+  padding: 2rem 1rem 5rem;   /* increased bottom padding to avoid footer overlap */
+  min-height: 100vh;
+  background: var(--claude-bg);
+  color: var(--claude-text);
+  line-height: 1.6;
+}
+
+#app {
+  max-width: 700px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.app__header {
+  text-align: center;
+}
+
+.app__header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--claude-accent);
+}
+
+.app__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: var(--claude-muted);
+}
+
+.card {
+  background: var(--claude-surface);
+  border: 1px solid var(--claude-border);
+  border-radius: var(--claude-radius);
+  padding: 1.5rem;
+  box-shadow: var(--claude-shadow);
+}
+
+.card__title {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--claude-accent);
+  border-bottom: 2px solid var(--claude-accent);
+  padding-bottom: 0.35rem;
+}
+
+/* Form */
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.form-row label {
+  flex: 1;
+  min-width: 160px;
+  font-size: 0.9rem;
+  color: var(--claude-muted);
+}
+
+.form-row input,
+.form-row select {
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--claude-border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+/* Hidden schedule fields (shown/hidden by JS) */
+.schedule-extra-row {
+  display: none;
+}
+.schedule-extra-row.is-visible {
+  display: flex;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.55rem 1.4rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn--primary {
+  background: var(--claude-accent);
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: #974f32;
+}
+
+.btn--small {
+  padding: 0.3rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  margin-left: 0.5rem;
+}
+
+.btn--outline {
+  background: transparent;
+  border: 1px solid var(--claude-border);
+  color: var(--claude-text);
+}
+
+.btn--outline:hover {
+  background: var(--claude-bg);
+}
+
+.btn--danger {
+  background: #c0392b;
+  color: #fff;
+}
+
+.btn--danger:hover {
+  background: #a93226;
+}
+
+.btn--success {
+  background: #27ae60;
+  color: #fff;
+}
+
+.btn--success:hover {
+  background: #1e8449;
+}
+
+/* Settings toggles (switch style) */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--claude-border);
+}
+
+.toggle-row:last-child {
+  border-bottom: none;
+}
+
+.toggle-label {
+  font-weight: 500;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 34px;
+}
+
+.slider::before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.switch input:checked + .slider {
+  background-color: var(--claude-accent);
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+/* Medication list items */
+.med-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--claude-border);
+}
+
+.med-item:last-child {
+  border-bottom: none;
+}
+
+.med-item__info {
+  display: flex;
+  flex-direction: column;
+}
+
+.med-item__name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.med-item__schedule {
+  font-size: 0.8rem;
+  color: var(--claude-muted);
+  margin-top: 0.2rem;
+}
+
+/* Dose cards */
+.dose-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--claude-border);
+}
+
+.dose-card:last-child {
+  border-bottom: none;
+}
+
+.dose-card__info {
+  display: flex;
+  flex-direction: column;
+}
+
+.dose-card__drug {
+  font-weight: 500;
+}
+
+.dose-card__time {
+  font-size: 0.85rem;
+  color: var(--claude-muted);
+}
+
+/* History entries */
+.history-entry {
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--claude-border);
+  display: flex;
+  justify-content: space-between;
+}
+
+.history-entry:last-child {
+  border-bottom: none;
+}
+
+.history-entry__name {
+  font-weight: 500;
+}
+
+.history-entry__time {
+  color: var(--claude-muted);
+}
+
+.empty-msg {
+  color: var(--claude-muted);
+  font-style: italic;
+  padding: 0.5rem 0;
+}

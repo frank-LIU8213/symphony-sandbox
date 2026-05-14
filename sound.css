@@ -1,0 +1,51 @@
+/* Sound settings panel styles */
+.med-sound-settings {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--claude-border, #e8ddd0);
+  border-radius: var(--claude-radius, 12px);
+  background: var(--claude-surface, #fffcf8);
+}
+
+.med-sound-settings__heading {
+  margin: 0 0 0.8rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--claude-accent, #b15b3a);
+}
+
+.med-sound-settings__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.med-sound-settings__label {
+  min-width: 4rem;
+  font-size: 0.9rem;
+  color: var(--claude-muted, #8a7a6a);
+}
+
+.med-sound-settings__select,
+.med-sound-settings__slider {
+  flex: 1;
+}
+
+.med-sound-settings__select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--claude-border, #e8ddd0);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: var(--claude-surface, #fff);
+  color: var(--claude-text, #2c2416);
+}
+
+.med-sound-settings__slider {
+  height: 6px;
+  accent-color: var(--claude-accent, #b15b3a);
+}
+
+.med-sound-settings__test-btn {
+  margin-top: 0.4rem;
+}

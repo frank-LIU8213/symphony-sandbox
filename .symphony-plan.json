@@ -1,0 +1,160 @@
+{
+  "contract": "## Shared Types\n\nAll modules operate on the following shared types, defined in JSDoc style within `types.js` (a standalone type-definition module) and accessible as global `MedRemTypes` namespace (optional but recommended). The existing modules (medications, schedule, logging) already use these shapes implicitly; new modules must remain compatible.\n\n### Medication\n```js\n/**\n * @typedef {Object} Medication\n * @property {string} id - unique UUID assigned on creation\n * @property {string} name - medication name\n * @property {string} dosage - e.g. \"500mg\"\n * @property {Schedule} schedule\n */\n```\n\n### Schedule\n```js\n/**\n * @typedef {Object} Schedule\n * @property {string} type - 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom'\n * @property {string[]} times - array of 'HH:MM'\n * @property {number[]} [days] - 0=Sun..6=Sat, used when type is 'weekly' or 'custom'\n * @property {string} [startDate] - ISO date string for recurring biweekly/monthly schedules\n * @property {number} [intervalValue] - weeks between doses for biweekly type\n * @property {number} [dayOfMonth] - day of month for monthly type\n */\n```\n\n### Dose\n```js\n/**\n * @typedef {Object} Dose\n * @property {string} id - unique identifier, usually `${med.id}_${time}`\n * @property {string} medicationId\n * @property {string} medicationName\n * @property {string} dosage\n * @property {Date} dueDate\n * @property {string} time - 'HH:MM'\n */\n```\n\n### HistoryEntry (used by logging module)\n```js\n/**\n * @typedef {Object} HistoryEntry\n * @property {string} doseId\n * @property {string} medicationName\n * @property {string} takenAt - ISO string\n */\n```\n\n## API Contract\n\nEvery new module exports its public API on a global namespace under `window.MedRem*`. The integrator (`w_integrator`) will call these in a defined order after DOMContentLoaded. Modules **must not** modify `index.html` or `main.js` directly; they inject UI elements via JavaScript if needed.\n\n### MedRemAnimations (animations.js)\n- `initAnimations(options?: {enableFadeIn?: boolean, enablePulse?: boolean})` – attach necessary listeners or observers to trigger animations on DOM changes. Returns void.\n- `pulseDoseItem(element: HTMLElement)` – apply a pulsing animation to a specific dose card.\n- `animateDoseTaken(element: HTMLElement, callback?: () => void)` – smooth transition (e.g., scale down + opacity) when a dose is marked taken, then invoke optional callback.\n- `fadeInSection(container: HTMLElement)` – fade-in a whole section container.\n\n### MedRemDecorations (decorations.js)\n- `initDecorations(options?: {headerText?: string, particleCount?: number})` – inject a styled header, footer, and floating decorative elements (e.g., pills, leaves) into `document.body`. Returns void.\n\n### MedRemTheming (theming.js)\n- `initThemeToggle(containerId?: string)` – create a sun/moon toggle button and prepopulate theme from localStorage. If `containerId` is provided, appends the toggle inside that element; otherwise appends to `<body>`.\n- `getCurrentTheme(): 'light' | 'dark'` – returns current active theme.\n- `applyTheme(theme: 'light' | 'dark')` – applies the theme by toggling a class on `<html>` and persisting to localStorage. Emits a custom event `medrem-theme-changed` on `document`.\n\n### MedRemSound (sound.js)\n- `initSoundSettings(containerId?: string)` – inject a settings panel (sound picker, volume slider) into the designated container or body. Loads saved preferences from localStorage.\n- `playSound(type?: string)` – plays the currently selected sound at the stored volume. If `type` is provided, plays that sound instead (e.g., 'chime', 'beep', 'melody').\n- `setVolume(level: number)` – updates volume (0–1) and persists to localStorage.\n\nAll public functions must be safe to call multiple times (idempotent where reasonable).\n\n## Naming Conventions\n- Global namespace: `MedRem<ModuleName>` (e.g., `MedRemAnimations`, `MedRemDecorations`, `MedRemTheming`, `MedRemSound`).\n- CSS classes: prefix `med-` followed by module and purpose, e.g., `.med-decorations-header`, `.med-theme-toggle`, `.med-sound-settings`.\n- Custom events: `medrem-<event-name>`.\n- DOM id attributes: `med-<module>-<element>` (e.g., `med-theme-toggle-btn`, `med-sound-panel`).\n- File names: lowercase with hyphens, e.g., `animations.js`, `decorations.css`.\n- Persistent storage keys: `medrem_<module>_<data>` (e.g., `medrem_theme_preference`, `medrem_sound_settings`). Do not collide with existing keys `medrem_medications` and `medrem_history`.\n- JSDoc types: all parameters and return values must be annotated. Every public function must have a JSDoc comment.",
+  "scaffold_files": [
+    {
+      "path": "types.js",
+      "content": "/** Shared type definitions (JSDoc). No runtime value. */\n(function () {\n  'use strict';\n\n  /**\n   * @typedef {Object} Medication\n   * @property {string} id\n   * @property {string} name\n   * @property {string} dosage\n   * @property {import('./schedule').Schedule} schedule\n   */\n\n  /**\n   * @typedef {Object} Schedule\n   * @property {string} type - 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom'\n   * @property {string[]} times - array of 'HH:MM'\n   * @property {number[]} [days] - 0=Sun..6=Sat\n   * @property {string} [startDate] - ISO date string\n   * @property {number} [intervalValue] - weeks between doses\n   * @property {number} [dayOfMonth] - day of month\n   */\n\n  /**\n   * @typedef {Object} Dose\n   * @property {string} id\n   * @property {string} medicationId\n   * @property {string} medicationName\n   * @property {string} dosage\n   * @property {Date} dueDate\n   * @property {string} time - 'HH:MM'\n   */\n\n  /**\n   * @typedef {Object} HistoryEntry\n   * @property {string} doseId\n   * @property {string} medicationName\n   * @property {string} takenAt - ISO string\n   */\n\n  window.MedRemTypes = {}; // dummy, just for reference\n})();\n"
+    },
+    {
+      "path": "animations.js",
+      "content": "(function () {\n  'use strict';\n\n  /**\n   * Initializes animation hooks.\n   * @param {{ enableFadeIn?: boolean, enablePulse?: boolean }} [options]\n   */\n  function initAnimations(options = {}) {\n    // Stub – agent will implement logic.\n    // e.g., attach MutationObserver to auto-fadeIn sections,\n    // set up a periodic checker for dose pulses.\n  }\n\n  /**\n   * Apply pulsing effect to a dose element.\n   * @param {HTMLElement} element\n   */\n  function pulseDoseItem(element) {\n    // Stub\n  }\n\n  /**\n   * Animate a dose card when user marks it taken.\n   * @param {HTMLElement} element\n   * @param {() => void} [callback] - called when animation ends.\n   */\n  function animateDoseTaken(element, callback) {\n    // Stub\n  }\n\n  /**\n   * Fade-in a container element.\n   * @param {HTMLElement} container\n   */\n  function fadeInSection(container) {\n    // Stub\n  }\n\n  window.MedRemAnimations = {\n    initAnimations,\n    pulseDoseItem,\n    animateDoseTaken,\n    fadeInSection\n  };\n})();\n"
+    },
+    {
+      "path": "animations.css",
+      "content": "/* Animations module styles. Each class must be prefixed with 'med-anim-'. */\n/* Agent will add keyframes and classes here. */\n"
+    },
+    {
+      "path": "decorations.js",
+      "content": "(function () {\n  'use strict';\n\n  /**\n   * Injects decorative header, footer, and floating elements.\n   * @param {{ headerText?: string, particleCount?: number }} [options]\n   */\n  function initDecorations(options = {}) {\n    // Stub\n  }\n\n  window.MedRemDecorations = {\n    initDecorations\n  };\n})();\n"
+    },
+    {
+      "path": "decorations.css",
+      "content": "/* Decorations module styles. Prefix with 'med-decor-'. */\n"
+    },
+    {
+      "path": "theming.js",
+      "content": "(function () {\n  'use strict';\n\n  /**\n   * Creates theme toggle button and applies stored preference.\n   * @param {string} [containerId] - ID of element where toggle should be appended.\n   */\n  function initThemeToggle(containerId) {\n    // Stub\n  }\n\n  /**\n   * @returns {'light' | 'dark'}\n   */\n  function getCurrentTheme() {\n    // Stub\n    return 'light';\n  }\n\n  /**\n   * Apply a theme and persist to localStorage.\n   * @param {'light' | 'dark'} theme\n   */\n  function applyTheme(theme) {\n    // Stub\n  }\n\n  window.MedRemTheming = {\n    initThemeToggle,\n    getCurrentTheme,\n    applyTheme\n  };\n})();\n"
+    },
+    {
+      "path": "themes.css",
+      "content": "/* Theme variables and rules. Prefix classes with 'med-theme-'. */\n"
+    },
+    {
+      "path": "sound.js",
+      "content": "(function () {\n  'use strict';\n\n  /**\n   * Injects sound settings panel and loads saved preferences.\n   * @param {string} [containerId] - where to place the panel.\n   */\n  function initSoundSettings(containerId) {\n    // Stub\n  }\n\n  /**\n   * Play the currently selected sound (or a specific type).\n   * @param {string} [type] - e.g. 'beep', 'chime', 'melody'\n   */\n  function playSound(type) {\n    // Stub\n  }\n\n  /**\n   * Set volume and persist.\n   * @param {number} level - between 0 and 1\n   */\n  function setVolume(level) {\n    // Stub\n  }\n\n  window.MedRemSound = {\n    initSoundSettings,\n    playSound,\n    setVolume\n  };\n})();\n"
+    },
+    {
+      "path": "sound.css",
+      "content": "/* Sound settings panel styles. Prefix with 'med-sound-'. */\n"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w_animations",
+      "task": "User sees smooth animations when doses are due (pulse), when they mark a dose taken (satisfying transition), and when sections first appear (fade-in).",
+      "acceptance_criteria": [
+        "After page load, the upcoming doses list fades in (opacity 0→1 over ≥300ms).",
+        "Every 5 seconds, any dose item whose `dueDate` is within the next 30 minutes gets class `med-anim-pulse` added, causing a visual pulse (scale oscillation).",
+        "When `animateDoseTaken(element, callback)` is called, the element scales to 0.9 and opacity to 0.5 over 200ms, then reverses to original size and opacity over 200ms; `callback` is called at end.",
+        "`initAnimations({enableFadeIn: true})` called by integrator leads to `fadeInSection` being invoked on `#upcoming-doses`, `#medication-list`, `#history-list` containers."
+      ],
+      "files_owned": [
+        "animations.js",
+        "animations.css"
+      ],
+      "files_readonly": [
+        "types.js",
+        "schedule.js",
+        "main.js",
+        "index.html"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w_decorations",
+      "task": "User sees a branded header with the app title, a footer with credits, and floating decorative elements (pills/leaves) that create a pleasant atmosphere.",
+      "acceptance_criteria": [
+        "`initDecorations({headerText: '用药提醒', particleCount: 15})` creates a `<header>` with class `med-decor-header` containing the given text, inserted as first child of `<body>`.",
+        "A `<footer>` with class `med-decor-footer` containing '© 2025 Medication Reminder' is appended to `<body>`.",
+        "Exactly 15 `<div>` elements with class `med-decor-particle` are created and animated (via CSS animation) to float across viewport; each has random horizontal start, size between 10–30px, and contains an SVG icon (pill or leaf).",
+        "No decoration element overlaps or obscures existing interactive controls (z-index managed)."
+      ],
+      "files_owned": [
+        "decorations.js",
+        "decorations.css"
+      ],
+      "files_readonly": [
+        "types.js",
+        "main.js",
+        "index.html"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w_theming",
+      "task": "User can toggle between a light and a dark theme, with the preference persisting across sessions.",
+      "acceptance_criteria": [
+        "`initThemeToggle()` adds a button with id `med-theme-toggle-btn` to the document body (or specified container); button shows sun ☀️ when dark theme is active, moon 🌙 when light theme.",
+        "Clicking the button calls `applyTheme('dark')` if current is light, else `applyTheme('light')`; `applyTheme` adds/removes class `med-theme-dark` on `<html>`.",
+        "After page reload, the stored theme (from localStorage key `medrem_theme_preference`) is applied during `initThemeToggle`.",
+        "All CSS color definitions (background, text, borders) in `themes.css` react to the `.med-theme-dark` class using CSS variables defined on `:root` and overridden on `.med-theme-dark`."
+      ],
+      "files_owned": [
+        "theming.js",
+        "themes.css"
+      ],
+      "files_readonly": [
+        "types.js",
+        "main.js",
+        "index.html"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w_sound",
+      "task": "User can choose from multiple notification sounds and adjust volume, with settings remembered.",
+      "acceptance_criteria": [
+        "`initSoundSettings()` appends a `<div id='med-sound-panel'>` containing a `<select>` with at least three options ('beep', 'chime', 'melody') and a volume `<input type='range' min='0' max='1' step='0.1'>`.",
+        "Changing the select or slider calls `setVolume`/updates internal sound selection; `playSound()` uses the current selection and volume.",
+        "The selected sound index and volume are saved to localStorage (`medrem_sound_settings`) and restored on next page load.",
+        "When `playSound('chime')` is called, a distinct audio pattern (different from the default beep) is produced via Web Audio API; no external audio files required."
+      ],
+      "files_owned": [
+        "sound.js",
+        "sound.css"
+      ],
+      "files_readonly": [
+        "types.js",
+        "notifications.js",
+        "main.js",
+        "index.html"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w_integrator",
+      "task": "All new UI modules (animations, decorations, theming, sound) are wired into the existing medication reminder app so that the complete user experience is cohesive and no existing feature breaks.",
+      "acceptance_criteria": [
+        "`index.html` includes `<script src=\"types.js\"></script>` (if needed), plus scripts for `animations.js`, `decorations.js`, `theming.js`, `sound.js` AND their corresponding CSS files (in correct order).",
+        "`main.js` (modified) calls `MedRemAnimations.initAnimations()`, `MedRemDecorations.initDecorations()`, `MedRemTheming.initThemeToggle()`, `MedRemSound.initSoundSettings()` after DOMContentLoaded, BEFORE existing render logic.",
+        "The existing medication CRUD (add/delete), dose display, history logging, and audio notification continue to work without console errors.",
+        "The beep currently played in `main.js`'s `playBeep()` is replaced by `MedRemSound.playSound('beep')` to leverage volume/sound settings.",
+        "All DOM selectors used in new modules exist on the page when integrated (e.g., `#medication-list`, `#upcoming-doses`, `#history-list` are still present).",
+        "Visual order: header (decorations) → theme toggle → medication form → medication list → doses → history → sound panel → footer.",
+        "No white screen or layout shifts during initialisation."
+      ],
+      "files_owned": [
+        "index.html",
+        "main.js"
+      ],
+      "files_readonly": [
+        "types.js",
+        "animations.js",
+        "decorations.js",
+        "theming.js",
+        "sound.js",
+        "medications.js",
+        "schedule.js",
+        "logging.js",
+        "notifications.js",
+        "background.js",
+        "animations.css",
+        "decorations.css",
+        "themes.css",
+        "sound.css",
+        "styles.css"
+      ],
+      "is_integrator": true
+    }
+  ]
+}

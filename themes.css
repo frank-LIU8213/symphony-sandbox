@@ -1,0 +1,52 @@
+/* Theme variables and rules. Prefix classes with 'med-theme-'. */
+
+/* Dark theme overrides */
+html.med-theme-dark {
+  --claude-bg: #1e1a16;
+  --claude-surface: #2c241c;
+  --claude-accent: #d47a56;
+  --claude-text: #e6ddd0;
+  --claude-muted: #a09080;
+  --claude-border: #3c322a;
+  --claude-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+html.med-theme-dark body {
+  /* Body background is set via --claude-bg already */
+  transition: background-color 0.3s, color 0.3s;
+}
+
+html.med-theme-dark body::before {
+  background: rgba(30,26,22,0.82);
+}
+
+html.med-theme-dark .card {
+  /* Surface colour adapts automatically via var */
+  transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+/* Toggle button (used for light/dark switch) */
+.med-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--claude-border, #e8ddd0);
+  background: var(--claude-surface, #fffcf8);
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  box-shadow: var(--claude-shadow, 0 2px 8px rgba(0,0,0,0.06));
+}
+
+.med-theme-toggle:hover {
+  transform: scale(1.1);
+  border-color: var(--claude-accent, #b15b3a);
+}
+
+.med-theme-toggle:active {
+  transform: scale(0.95);
+}
