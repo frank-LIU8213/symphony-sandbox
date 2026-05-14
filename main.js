@@ -13,6 +13,42 @@
   MedRemLogging.initLogging('medrem_history');
   MedRemNotifications.initNotifications();
 
+  // --- Initialise new UI modules ---
+  if (window.MedRemAnimations) {
+    MedRemAnimations.initAnimations({ enableFadeIn: true, enablePulse: true });
+  }
+  if (window.MedRemDecorations) {
+    MedRemDecorations.initDecorations({ headerText: '💊 用药提醒', particleCount: 10 });
+  }
+  if (window.MedRemTheming) {
+    MedRemTheming.initThemeToggle('settings-section');
+  }
+  if (window.MedRemSound) {
+    MedRemSound.initSoundSettings('settings-section');
+  }
+
+  // --- Load generated background image (nano banana 2) ---
+  (function loadBgImage() {
+    var bgUrl = 'generated-images/generated.jpg';
+    var img = new Image();
+    img.onload = function () {
+      document.body.style.backgroundImage = 'url(' + bgUrl + ')';
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundAttachment = 'fixed';
+
+      // Remove the overlay created by background.js so the image is fully visible
+      var overlay = document.querySelector('.medrem-bg-overlay');
+      if (overlay) {
+        overlay.parentNode.removeChild(overlay);
+      }
+    };
+    img.onerror = function () {
+      // silently fall back to solid colour defined in styles.css
+    };
+    img.src = bgUrl;
+  })();
+
   // --- DOM references ---
   const form = document.getElementById('medication-form');
   const nameInput = document.getElementById('med-name');
@@ -124,6 +160,16 @@
         MedRemLogging.markDoseTaken(doseId, medName);
         render();
         playBeep(); // immediate audio feedback
+
+        // Trigger animation if module available
+        if (window.MedRemAnimations) {
+          const card = this.closest('.dose-card');
+          if (card) {
+            MedRemAnimations.animateDoseTaken(card, function () {
+              // After animation completes, pulse remaining items? optional
+            });
+          }
+        }
       });
     });
   }
