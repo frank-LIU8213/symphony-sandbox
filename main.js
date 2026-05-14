@@ -43,17 +43,6 @@
     }
   }
 
-  // --- Override notifications sound to use beep ---
-  const origCheckAndNotify = MedRemNotifications.checkAndNotify;
-  MedRemNotifications.checkAndNotify = function (doses) {
-    origCheckAndNotify(doses);
-    // play a short sound when a dose is pending
-    if (doses && doses.length > 0) {
-      // only beep for doses that are due right now (check already done in module)
-      playBeep();
-    }
-  };
-
   // ------------------------------------------------------------------
   // Render all sections
   // ------------------------------------------------------------------
@@ -168,7 +157,7 @@
       const daysStr = s.days.map(d => dayNames[d]).join('、');
       return `每周${daysStr} ${times}`;
     }
-    if (s.type === 'custom' && s.days) {
+    if (s.type === 'customDays' && s.days) {
       const dayNames = ['日','一','二','三','四','五','六'];
       const daysStr = s.days.map(d => dayNames[d]).join('、');
       return `自定义 · 每周${daysStr} ${times}`;
@@ -201,37 +190,92 @@
       alert('请输入有效时间（HH:MM，多个用逗号分隔）');
       return;
     }
+
     const scheduleType = scheduleTypeSelect.value;
-    let days = [];
-    if (scheduleType === 'weekly' || scheduleType === 'custom') {
+
+    // --- additional DOM references for schedule fields ---
+    const startDateInput = document.getElementById('med-start-date');
+    const monthlyDayInput = document.getElementById('med-monthly-day');
+    const intervalValueInput = document.getElementById('med-interval-value');
+    const intervalUnitSelect = document.getElementById('med-interval-unit');
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const schedule = { type: scheduleType, times: times };
+
+    // ---------- weekly / customDays ----------
+    let daysForWeekly = null;
+    if (scheduleType === 'weekly' || scheduleType === 'customDays') {
       const daysRaw = daysInput.value.trim();
-      days = daysRaw.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n >= 0 && n <= 6);
-      if (days.length === 0) {
+      daysForWeekly = daysRaw.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n >= 0 && n <= 6);
+      if (daysForWeekly.length === 0) {
         alert('请输入有效的天数');
         return;
       }
-    } else {
-      // daily – include all days
-      days = [0,1,2,3,4,5,6];
+    }
+
+    // assemble schedule depending on type
+    switch (scheduleType) {
+      case 'weekly':
+      case 'customDays':
+        schedule.days = daysForWeekly;
+        break;
+
+      case 'biweekly': {
+        const startDate = startDateInput.value || todayStr;
+        const interval = parseInt(document.getElementById('med-biweekly-interval').value, 10) || 2;
+        schedule.startDate = startDate;
+        schedule.intervalValue = interval;
+        break;
+      }
+
+      case 'monthly': {
+        const startDate = startDateInput.value || todayStr;
+        const dayOfMonth = parseInt(monthlyDayInput.value, 10) || 1;
+        schedule.startDate = startDate;
+        schedule.dayOfMonth = Math.min(dayOfMonth, 31);
+        break;
+      }
+
+      case 'biannual': {
+        const startDate = startDateInput.value || todayStr;
+        const interval = parseInt(document.getElementById('med-biannual-interval').value, 10) || 6;
+        schedule.startDate = startDate;
+        schedule.intervalValue = interval;
+        break;
+      }
+
+      case 'customInterval': {
+        const startDate = startDateInput.value || todayStr;
+        const intervalValue = parseInt(intervalValueInput.value, 10) || 1;
+        const intervalUnit = intervalUnitSelect.value || 'day';
+        schedule.startDate = startDate;
+        schedule.intervalValue = intervalValue;
+        schedule.intervalUnit = intervalUnit;
+        break;
+      }
+
+      default:
+        // daily – no extra fields
+        break;
     }
 
     const medication = {
       id: crypto.randomUUID(),
       name: name,
       dosage: dosage,
-      schedule: {
-        type: scheduleType,
-        times: times,
-        days: days
-      }
+      schedule: schedule
     };
 
     MedRemMedications.addMedication(medication);
+
     // clear form
     nameInput.value = '';
     dosageInput.value = '';
     timesInput.value = '';
     daysInput.value = '0,1,2,3,4,5,6';
+    startDateInput.value = '';
+    monthlyDayInput.value = '';
+    intervalValueInput.value = '2';
     scheduleTypeSelect.value = 'daily';
 
     render();

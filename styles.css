@@ -22,8 +22,8 @@ body {
   margin: 0;
   padding: 2rem 1rem;
   min-height: 100vh;
-  /* generated background image via nano‑banana2 – muted by overlay in background.js */
-  background: url('generated-images/generated.jpg') center / cover no-repeat fixed;
+  /* Replace generated image with a clean solid background to avoid text / clutter */
+  background: var(--claude-bg);
   color: var(--claude-text);
   line-height: 1.6;
 }
