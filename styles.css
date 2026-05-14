@@ -20,7 +20,7 @@
 body {
   font-family: var(--claude-font);
   margin: 0;
-  padding: 2rem 1rem;
+  padding: 2rem 1rem 5rem;   /* increased bottom padding to avoid footer overlap */
   min-height: 100vh;
   background: var(--claude-bg);
   color: var(--claude-text);

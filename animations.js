@@ -5,8 +5,8 @@
   // Internal helpers
   // ---------------------------------------------------------------------------
 
-  const PULSE_THRESHOLD_MS = 30000;   // pulse dose if due within 30 seconds
-  const CHECK_INTERVAL_MS = 10000;    // re‑evaluate pulse states every 10 s
+  const PULSE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
+  const CHECK_INTERVAL_MS = 5000;             // every 5 seconds
 
   /** @type {boolean} */
   let _enableFadeIn = true;

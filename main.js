@@ -16,12 +16,18 @@
   // --- Initialise new UI modules ---
   if (window.MedRemAnimations) {
     MedRemAnimations.initAnimations({ enableFadeIn: true, enablePulse: true });
+
+    // Ensure required sections get fade-in per acceptance criteria
+    ['upcoming-doses', 'medication-list', 'history-list'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) MedRemAnimations.fadeInSection(el);
+    });
   }
   if (window.MedRemDecorations) {
-    MedRemDecorations.initDecorations({ headerText: '💊 用药提醒', particleCount: 10 });
+    MedRemDecorations.initDecorations({ headerText: '💊 用药提醒', particleCount: 15 });
   }
   if (window.MedRemTheming) {
-    MedRemTheming.initThemeToggle('settings-section');
+    MedRemTheming.initThemeToggle('theme-container');
   }
   if (window.MedRemSound) {
     MedRemSound.initSoundSettings('settings-section');
@@ -159,7 +165,12 @@
         // store history entry (date will be now)
         MedRemLogging.markDoseTaken(doseId, medName);
         render();
-        playBeep(); // immediate audio feedback
+        // Play sound via MedRemSound to respect volume & sound settings
+        if (window.MedRemSound) {
+          MedRemSound.playSound('beep');
+        } else {
+          playBeep();
+        }
 
         // Trigger animation if module available
         if (window.MedRemAnimations) {

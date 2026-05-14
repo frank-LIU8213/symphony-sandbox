@@ -12,12 +12,12 @@
     if (initialized) return;
     initialized = true;
 
-    options = options || {};
-    const headerText = options.headerText || '用药提醒';
-    const particleCount = options.particleCount;
-    const count = (typeof particleCount === 'number' && particleCount > 0)
-      ? particleCount
-      : 12;
+    const opts = options || {};
+    const headerText = opts.headerText || '用药提醒';
+    const particleCount =
+      typeof opts.particleCount === 'number' && opts.particleCount > 0
+        ? opts.particleCount
+        : 15; // default to 15 per spec
 
     const body = document.body;
 
@@ -26,37 +26,45 @@
     floatContainer.className = 'med-decor-floating-container';
     body.prepend(floatContainer);
 
-    for (let i = 0; i < count; i++) {
+    const colors = ['#b15b3a', '#c17b5a', '#e8ddd0', '#d4a594', '#a07a5a'];
+
+    for (let i = 0; i < particleCount; i++) {
       const isPill = Math.random() > 0.5;
-      const el = document.createElement('div');
-      el.className = isPill ? 'med-decor-pill' : 'med-decor-leaf';
+      const particle = document.createElement('div');
+      particle.className =
+        'med-decor-particle ' + (isPill ? 'med-decor-pill' : 'med-decor-leaf');
 
-      // random size between 18px and 50px
-      const size = 18 + Math.random() * 32;
-      if (isPill) {
-        el.style.width = size + 'px';
-        el.style.height = (size * 0.45) + 'px';
-      } else {
-        el.style.width = size + 'px';
-        el.style.height = (size * 0.6) + 'px';
-        // random inline rotation (animation uses translate only)
-        el.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
-      }
+      // size between 10‑30 px
+      const size = Math.floor(10 + Math.random() * 21);
+      particle.style.width = size + 'px';
+      particle.style.height = size + 'px';
 
-      // random position
-      el.style.left = (Math.random() * 100) + '%';
-      el.style.top  = (Math.random() * 100) + '%';
+      // random start position
+      particle.style.left = Math.random() * 100 + '%';
+      particle.style.top = Math.random() * 100 + '%';
 
       // colour from Claude palette
-      var colors = ['#b15b3a', '#c17b5a', '#e8ddd0', '#d4a594', '#a07a5a'];
-      el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      el.style.opacity = (0.12 + Math.random() * 0.25).toFixed(3);
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      particle.style.color = color;
 
-      // stagger animation start
-      el.style.animationDelay = (Math.random() * 8) + 's';
-      el.style.animationDuration = (10 + Math.random() * 10) + 's';
+      // SVG icon (pill or leaf)
+      if (isPill) {
+        particle.innerHTML =
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">' +
+          '<rect x="4" y="7" width="16" height="10" rx="4" fill="currentColor"/>' +
+          '</svg>';
+      } else {
+        particle.innerHTML =
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">' +
+          '<path d="M12 2 L4 8 L4 18 L12 22 L20 18 L20 8Z" fill="currentColor"/>' +
+          '</svg>';
+      }
 
-      floatContainer.appendChild(el);
+      // stagger animation start / duration
+      particle.style.animationDelay = Math.random() * 8 + 's';
+      particle.style.animationDuration = 10 + Math.random() * 10 + 's';
+
+      floatContainer.appendChild(particle);
     }
 
     // ---- Decorative header (subtle gradient backdrop) ----
@@ -71,7 +79,7 @@
     // ---- Footer ----
     const footer = document.createElement('div');
     footer.className = 'med-decor-footer';
-    footer.textContent = 'MedReminder · 用药提醒 v1.0';
+    footer.textContent = '© 2025 Medication Reminder';
     body.appendChild(footer);
   }
 
