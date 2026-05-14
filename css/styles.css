@@ -1,0 +1,212 @@
+/* iOS‑style pomodoro app – full design */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600;700&display=swap');
+
+:root {
+  --pomodoro-primary: #ff6b6b;
+  --pomodoro-primary-dim: #e05555;
+  --pomodoro-bg-start: #1a1a2e;
+  --pomodoro-bg-end: #16213e;
+  --pomodoro-card-bg: rgba(255, 255, 255, 0.12);
+  --pomodoro-card-border: rgba(255, 255, 255, 0.08);
+  --pomodoro-text: #ffffff;
+  --pomodoro-text-secondary: rgba(255, 255, 255, 0.7);
+  --pomodoro-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --pomodoro-radius: 28px;
+  --pomodoro-transition: 0.3s ease;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+}
+
+#app-background {
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(135deg, var(--pomodoro-bg-start), var(--pomodoro-bg-end));
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+#app-background::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at 30% 40%, rgba(255, 107, 107, 0.08), transparent 60%),
+              radial-gradient(circle at 70% 60%, rgba(255, 200, 100, 0.05), transparent 50%);
+  pointer-events: none;
+}
+
+/* Main card */
+.pomodoro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 40px 36px;
+  background: var(--pomodoro-card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--pomodoro-card-border);
+  border-radius: var(--pomodoro-radius);
+  box-shadow: var(--pomodoro-shadow);
+  max-width: 380px;
+  width: 90%;
+  position: relative;
+  z-index: 1;
+}
+
+/* Circle container */
+.pomodoro__circle-container {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pomodoro__circle {
+  width: 100%;
+  height: 100%;
+  transform: rotate(0deg);
+  filter: drop-shadow(0 0 16px rgba(255, 107, 107, 0.15));
+  transition: filter var(--pomodoro-transition);
+}
+
+.pomodoro__circle circle {
+  transition: stroke-dashoffset 0.3s linear;
+}
+
+/* Pulse animation */
+.pomodoro__circle--pulse {
+  animation: pomodoro-pulse 0.6s ease;
+}
+
+@keyframes pomodoro-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 16px rgba(255, 107, 107, 0.2)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 28px rgba(255, 107, 107, 0.6)); }
+}
+
+/* Timer display centered over circle */
+.pomodoro__timer {
+  position: absolute;
+  font-size: 2.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--pomodoro-text);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+/* Controls */
+.pomodoro__controls {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.pomodoro__button {
+  flex: 1;
+  padding: 12px 0;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--pomodoro-text);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.pomodoro__button:active {
+  transform: scale(0.96);
+}
+
+.pomodoro__button--start {
+  background: linear-gradient(135deg, var(--pomodoro-primary), var(--pomodoro-primary-dim));
+  box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
+}
+
+.pomodoro__button--start:hover {
+  box-shadow: 0 6px 24px rgba(255, 107, 107, 0.4);
+}
+
+.pomodoro__button--pause {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pomodoro__button--pause:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.pomodoro__button--reset {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--pomodoro-text-secondary);
+}
+
+.pomodoro__button--reset:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--pomodoro-text);
+}
+
+/* Mode selector row */
+.pomodoro__mode {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--pomodoro-text-secondary);
+  font-size: 0.85rem;
+}
+
+.pomodoro__selector {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--pomodoro-text);
+  backdrop-filter: blur(4px);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.pomodoro__selector:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.pomodoro__selector option {
+  color: #111;
+  background: #fff;
+}
+
+/* Responsive tweaks */
+@media (max-width: 420px) {
+  .pomodoro {
+    padding: 28px 20px;
+    gap: 20px;
+  }
+  .pomodoro__circle-container {
+    width: 150px;
+    height: 150px;
+  }
+  .pomodoro__timer {
+    font-size: 2rem;
+  }
+}
