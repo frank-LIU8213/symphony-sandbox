@@ -93,10 +93,13 @@
 
   function renderUpcomingDoses() {
     const meds = MedRemMedications.getMedications();
-    const doses = MedRemSchedule.getUpcomingDoses(meds);
+    const allDoses = MedRemSchedule.getUpcomingDoses(meds);
     // cross‑reference history to know already‑taken doses
     const history = MedRemLogging.getHistory();
     const takenSet = new Set(history.map(h => h.doseId));
+
+    // remove doses that have already been taken
+    const doses = allDoses.filter(d => !takenSet.has(d.id));
 
     if (doses.length === 0) {
       dosesEl.innerHTML = '<div class="empty-msg">未来24小时没有待服用的剂量</div>';
@@ -104,21 +107,18 @@
     }
 
     const html = doses.map(d => {
-      const alreadyTaken = takenSet.has(d.id);
       const timeStr = d.scheduledTime.toLocaleString('zh-CN', {
         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
       });
       // find medication name
       const med = meds.find(m => m.id === d.medicationId);
       const drugName = med ? escapeHtml(med.name) : '未知';
-      const takenLabel = alreadyTaken ? '✅ 已服' : '';
-      const buttonHtml = alreadyTaken ? '' : `<button class="btn btn--small btn--success" data-dose-id="${d.id}">标记已服</button>`;
       return `<div class="dose-card">
         <div class="dose-card__info">
-          <span class="dose-card__drug">${drugName} ${takenLabel}</span>
+          <span class="dose-card__drug">${drugName}</span>
           <span class="dose-card__time">${timeStr}</span>
         </div>
-        ${buttonHtml}
+        <button class="btn btn--small btn--success" data-dose-id="${d.id}">标记已服</button>
       </div>`;
     }).join('');
     dosesEl.innerHTML = html;
@@ -132,7 +132,7 @@
         const med = meds.find(m => m.id === dose.medicationId);
         const medName = med ? med.name : '未知';
         // store history entry (date will be now)
-        MedRemLogging.markDoseTaken(doseId);
+        MedRemLogging.markDoseTaken(doseId, medName);
         render();
         playBeep(); // immediate audio feedback
       });

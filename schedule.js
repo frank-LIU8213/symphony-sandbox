@@ -68,8 +68,11 @@
           const diffMs = scheduledDate.getTime() - now.getTime();
 
           if (diffMs >= 0 && diffMs < lookAheadMs) {
+            // Use a stable, deterministic id so that history lookups work
+            // across multiple calls.
+            const stableId = med.id + '|' + timeStr + '|' + dayTarget;
             doses.push({
-              id: crypto.randomUUID(),
+              id: stableId,
               medicationId: med.id,
               scheduledTime: scheduledDate,
               taken: false,

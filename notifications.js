@@ -132,7 +132,9 @@
       return;
     }
 
-    checkAndNotify(doses);
+    // Use the public property so that the main.js audio wrapper applies
+    // to notifications triggered by the background timer as well.
+    window.MedRemNotifications.checkAndNotify(doses);
   }
 
   function getMedicationName(medicationId) {
