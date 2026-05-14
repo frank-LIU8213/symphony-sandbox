@@ -22,23 +22,9 @@ body {
   margin: 0;
   padding: 2rem 1rem;
   min-height: 100vh;
-  /* Replace generated image with a clean solid background to avoid text / clutter */
   background: var(--claude-bg);
   color: var(--claude-text);
   line-height: 1.6;
-}
-
-/* Additional overlay via CSS for instant effect before JS runs */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(250, 245, 239, 0.82);
-  z-index: 0;
-  pointer-events: none;
 }
 
 #app {
