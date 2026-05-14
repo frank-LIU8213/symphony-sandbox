@@ -1,0 +1,125 @@
+{
+  "contract": "## Shared Types\n\nThese types are used across all modules. All JavaScript objects that conform to these shapes must use the property names exactly as specified (camelCase).\n\n### Medication\n```typescript\ntype Medication = {\n  id: string;          // unique identifier, generated via crypto.randomUUID()\n  name: string;        // e.g., \"Aspirin\"\n  dosage: string;      // e.g., \"100mg\"\n  schedule: Schedule;\n};\n```\n\n### Schedule\n```typescript\ntype ScheduleType = 'daily' | 'weekly' | 'custom';\ntype Schedule = {\n  type: ScheduleType;\n  times: string[];     // array of \"HH:MM\" (24h), e.g., [\"08:00\", \"20:00\"]\n  days?: number[];     // for 'weekly' or 'custom': 0=Sun, 1=Mon, …, 6=Sat\n};\n```\n\n### Dose\n```typescript\ntype Dose = {\n  id: string;          // unique identifier\n  medicationId: string; // FK to Medication.id\n  scheduledTime: Date; // Date object (JS)\n  taken: boolean;      // false by default\n  takenAt?: string;    // ISO 8601 string if taken\n};\n```\n\n### HistoryEntry (used for display/logging)\n```typescript\ntype HistoryEntry = {\n  doseId: string;\n  medicationName: string;\n  takenAt: string;     // ISO 8601 string\n};\n```\n\n## API Contract (Module Interfaces)\n\nAll modules register themselves on the global `window` object under a dedicated namespace. The integrator (`main.js`) and other modules access each other through these namespaces. Namespaces:\n\n- `MedRemMedications` – medication storage\n- `MedRemSchedule` – schedule computation\n- `MedRemLogging` – dose-taking history\n- `MedRemNotifications` – browser notification & sound\n\nEach namespace is an object exposing the functions listed below.\n\n### 1. Medications Module (`medications.js`)\n\n- `MedRemMedications.initMedications(storageKey: string): void`\n  - Initialises the store using `localStorage` key `storageKey`. Must be called once before any other medication operation.\n\n- `MedRemMedications.addMedication(medication: Medication): Medication`\n  - Adds a new medication to the store. Assigns an `id` if missing. Returns the stored medication (with id).\n\n- `MedRemMedications.getMedications(): Medication[]`\n  - Returns all stored medications.\n\n- `MedRemMedications.removeMedication(id: string): void`\n  - Removes the medication with the given id. No effect if id doesn't exist.\n\n### 2. Schedule Module (`schedule.js`)\n\n- `MedRemSchedule.getUpcomingDoses(medications: Medication[]): Dose[]`\n  - Given a list of medications (e.g., from `getMedications()`), computes all scheduled doses that have not yet been taken or are upcoming within a configurable look‑ahead window (default: 24 hours). Returns an array of `Dose` objects sorted by `scheduledTime` ascending. The `taken` flag is always `false`. The caller is responsible for checking against logged history.\n\n### 3. Logging Module (`logging.js`)\n\n- `MedRemLogging.initLogging(storageKey: string): void`\n  - Initialises the history store using `localStorage` key `storageKey`. Must be called once before any logging operation.\n\n- `MedRemLogging.markDoseTaken(doseId: string): void`\n  - Records that the dose with the given id has been taken. Stores a `HistoryEntry` with the current timestamp. No‑op if the doseId is already taken (avoids duplicates).\n\n- `MedRemLogging.getHistory(): HistoryEntry[]`\n  - Returns all logged history entries, newest first.\n\n### 4. Notifications Module (`notifications.js`)\n\n- `MedRemNotifications.initNotifications(): void`\n  - Requests browser notification permission if not already granted. Sets up an interval (every 30 seconds) that calls `checkAndNotify` with the current list of upcoming doses (obtained from the schedule module).\n\n- `MedRemNotifications.checkAndNotify(doses: Dose[]): void`\n  - Compares each dose's `scheduledTime` with the current time. If it is within the notification threshold (default: at exact time ± 30 seconds), triggers a browser notification and plays a short audio sound (sound file to be provided by integrator).\n\n## Naming Conventions\n\n- **Variables and functions**: camelCase (e.g., `addMedication`, `scheduledTime`).\n- **Classes**: PascalCase (if any, but not expected).\n- **Constants (if exported)**: UPPER_SNAKE_CASE (e.g., `DEFAULT_LOOKAHEAD_HOURS`).\n- **DOM IDs**: lower‑case with hyphens (kebab‑case, e.g., `medication-list`).\n- **CSS class names**: BEM‑like `block__element--modifier` or simple lowercase‑with‑dashes.\n- **File names**: JavaScript modules: `lowercase.js`; entry point `main.js`; stylesheet `styles.css`; HTML `index.html`.\n- **localStorage keys**: `medrem_medications`, `medrem_history`. (all lower case with underscore).\n- **Sound asset**: `notification.mp3`.\n- **Background image**: `background.jpg`.\n- **Global namespaces**: `MedRemMedications`, `MedRemSchedule`, `MedRemLogging`, `MedRemNotifications` – each object name uses PascalCase prefix `MedRem` to avoid collisions.",
+  "scaffold_files": [
+    {
+      "path": "medications.js",
+      "content": "// Medications module – ownership: w_medications\n(function () {\n  'use strict';\n\n  /**\n   * @typedef {Object} Medication\n   * @property {string} id\n   * @property {string} name\n   * @property {string} dosage\n   * @property {Schedule} schedule\n   */\n  /**\n   * @typedef {Object} Schedule\n   * @property {string} type - 'daily' | 'weekly' | 'custom'\n   * @property {string[]} times - array of 'HH:MM'\n   * @property {number[]} [days] - 0=Sun..6=Sat\n   */\n\n  function initMedications(storageKey) {\n    // TODO: implement\n  }\n\n  function addMedication(medication) {\n    // TODO: implement\n    throw new Error('Not implemented');\n  }\n\n  function getMedications() {\n    // TODO: implement\n    throw new Error('Not implemented');\n  }\n\n  function removeMedication(id) {\n    // TODO: implement\n    throw new Error('Not implemented');\n  }\n\n  window.MedRemMedications = {\n    initMedications: initMedications,\n    addMedication: addMedication,\n    getMedications: getMedications,\n    removeMedication: removeMedication\n  };\n})();\n"
+    },
+    {
+      "path": "schedule.js",
+      "content": "// Schedule module – ownership: w_schedule\n(function () {\n  'use strict';\n\n  /**\n   * @typedef {Object} Dose\n   * @property {string} id\n   * @property {string} medicationId\n   * @property {Date} scheduledTime\n   * @property {boolean} taken\n   * @property {string} [takenAt]\n   */\n\n  /**\n   * @param {Medication[]} medications\n   * @returns {Dose[]}\n   */\n  function getUpcomingDoses(medications) {\n    // TODO: implement\n    throw new Error('Not implemented');\n  }\n\n  window.MedRemSchedule = {\n    getUpcomingDoses: getUpcomingDoses\n  };\n})();\n"
+    },
+    {
+      "path": "logging.js",
+      "content": "// Logging module – ownership: w_logging\n(function () {\n  'use strict';\n\n  /**\n   * @typedef {Object} HistoryEntry\n   * @property {string} doseId\n   * @property {string} medicationName\n   * @property {string} takenAt\n   */\n\n  function initLogging(storageKey) {\n    // TODO: implement\n  }\n\n  function markDoseTaken(doseId) {\n    // TODO: implement\n    throw new Error('Not implemented');\n  }\n\n  function getHistory() {\n    // TODO: implement\n    throw new Error('Not implemented');\n  }\n\n  window.MedRemLogging = {\n    initLogging: initLogging,\n    markDoseTaken: markDoseTaken,\n    getHistory: getHistory\n  };\n})();\n"
+    },
+    {
+      "path": "notifications.js",
+      "content": "// Notifications module – ownership: w_notifications\n(function () {\n  'use strict';\n\n  function initNotifications() {\n    // TODO: implement\n  }\n\n  /**\n   * @param {Dose[]} doses\n   */\n  function checkAndNotify(doses) {\n    // TODO: implement\n    throw new Error('Not implemented');\n  }\n\n  window.MedRemNotifications = {\n    initNotifications: initNotifications,\n    checkAndNotify: checkAndNotify\n  };\n})();\n"
+    },
+    {
+      "path": "index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"zh\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>用药提醒</title>\n  <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n  <div id=\"app\">\n    <h1>用药提醒</h1>\n    <!-- UI will be rendered here -->\n  </div>\n\n  <!-- Module loading order matters – main.js is last -->\n  <script src=\"medications.js\"></script>\n  <script src=\"schedule.js\"></script>\n  <script src=\"logging.js\"></script>\n  <script src=\"notifications.js\"></script>\n  <script src=\"main.js\"></script>\n</body>\n</html>\n"
+    },
+    {
+      "path": "main.js",
+      "content": "// Application entry point – ownership: w_integrator\n(function () {\n  'use strict';\n\n  // All namespaces are guaranteed to exist after the script tags.\n  // As a safeguard, exit early if anything is missing.\n  if (!window.MedRemMedications || !window.MedRemSchedule || !window.MedRemLogging || !window.MedRemNotifications) {\n    console.error('Missing module');\n    return;\n  }\n\n  // --- Initialise stores ---\n  MedRemMedications.initMedications('medrem_medications');\n  MedRemLogging.initLogging('medrem_history');\n  MedRemNotifications.initNotifications();\n\n  // --- Render initial UI ---\n  renderApp();\n\n  function renderApp() {\n    // TODO: implement\n  }\n})();\n"
+    },
+    {
+      "path": "styles.css",
+      "content": "/* Base styles – ownership: w_integrator */\nbody {\n  font-family: sans-serif;\n  margin: 0;\n  padding: 1rem;\n  /* Placeholder background image - will be replaced with actual generated image */\n  background: url('background.jpg') center/cover no-repeat fixed;\n}\n\n#app {\n  max-width: 600px;\n  margin: 0 auto;\n  background: rgba(255, 255, 255, 0.9);\n  padding: 1rem;\n  border-radius: 8px;\n}\n\n/* TODO: add more styles */\n"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w_medications",
+      "task": "User can persist medication data – add, list, and remove medications – through the medication store module.",
+      "acceptance_criteria": [
+        "module exports `MedRemMedications` namespace with `initMedications`, `addMedication`, `getMedications`, `removeMedication` as defined in the contract",
+        "`addMedication` stores a medication in localStorage, generates a unique id, and returns the full object",
+        "`getMedications` returns an array of Medication objects in insertion order",
+        "`removeMedication` deletes the medication by id; subsequent `getMedications` does not include it",
+        "operations persist across page reloads"
+      ],
+      "files_owned": [
+        "medications.js"
+      ],
+      "files_readonly": [],
+      "is_integrator": false
+    },
+    {
+      "id": "w_schedule",
+      "task": "User can see upcoming scheduled doses computed from medication schedules.",
+      "acceptance_criteria": [
+        "module exports `MedRemSchedule` namespace with `getUpcomingDoses` function",
+        "given a list of medications, `getUpcomingDoses` returns an array of Dose objects with `scheduledTime` set to the next occurrence of each scheduled time slot within a 24‑hour window",
+        "doses are sorted by `scheduledTime` ascending",
+        "the `taken` flag is always false in returned doses",
+        "daily, weekly (with days), and custom schedules are correctly interpreted"
+      ],
+      "files_owned": [
+        "schedule.js"
+      ],
+      "files_readonly": [],
+      "is_integrator": false
+    },
+    {
+      "id": "w_logging",
+      "task": "User can mark a scheduled dose as taken and review the history of taken doses.",
+      "acceptance_criteria": [
+        "module exports `MedRemLogging` namespace with `initLogging`, `markDoseTaken`, `getHistory`",
+        "`markDoseTaken` stores a HistoryEntry with doseId, current timestamp, and prevents duplicate marks for the same doseId",
+        "`getHistory` returns entries in reverse chronological order",
+        "history is persisted in localStorage under the configured key",
+        "`initLogging` must be called before any other function in the module"
+      ],
+      "files_owned": [
+        "logging.js"
+      ],
+      "files_readonly": [],
+      "is_integrator": false
+    },
+    {
+      "id": "w_notifications",
+      "task": "User receives browser notification and an audio cue when an upcoming dose time arrives.",
+      "acceptance_criteria": [
+        "module exports `MedRemNotifications` namespace with `initNotifications` and `checkAndNotify`",
+        "`initNotifications` requests notification permission and starts a 30‑second interval that calls `checkAndNotify` with the current upcoming doses (retrieved via `MedRemSchedule.getUpcomingDoses` and medication list)",
+        "`checkAndNotify` fires `new Notification(...)` for each dose whose `scheduledTime` is within ±30 seconds of now and that hasn't already been notified in the current interval",
+        "`checkAndNotify` also plays the `notification.mp3` sound (once per check cycle)",
+        "the module does NOT require the page to be visible to trigger notifications"
+      ],
+      "files_owned": [
+        "notifications.js"
+      ],
+      "files_readonly": [],
+      "is_integrator": false
+    },
+    {
+      "id": "w_integrator",
+      "task": "User can access a fully functional medication reminder web application. The app displays medications, upcoming doses, allows adding/removing medications and marking doses as taken, and triggers in‑browser notifications when it's time to take a medication.",
+      "acceptance_criteria": [
+        "When the page loads, the user sees a heading '用药提醒', an 'Add Medication' form, a list of existing medications, an upcoming doses table, and a history list (initially empty)",
+        "Filling the form and submitting adds a medication which immediately appears in the medication list and populates upcoming doses if schedule is defined",
+        "Clicking a 'Mark Taken' button next to an upcoming dose records the dose in history, removes it from upcoming doses, and updates the history list",
+        "A background check (via notifications module) triggers a browser notification and plays a sound when any dose time matches the current time (± tolerance)",
+        "The page uses a background image (generated placeholder) and a pleasant visual style",
+        "All four modules (MedRemMedications, MedRemSchedule, MedRemLogging, MedRemNotifications) are imported and wired together in main.js; entry point `main.js` initiates all modules and renders the UI on `DOMContentLoaded` equivalent (via script tag order)"
+      ],
+      "files_owned": [
+        "index.html",
+        "main.js",
+        "styles.css",
+        "background.jpg",
+        "notification.mp3"
+      ],
+      "files_readonly": [
+        "medications.js",
+        "schedule.js",
+        "logging.js",
+        "notifications.js"
+      ],
+      "is_integrator": true
+    }
+  ]
+}
