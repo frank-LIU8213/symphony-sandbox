@@ -1,23 +1,10 @@
-// Logging module – ownership: w_logging
 (function () {
   'use strict';
-
-  /**
-   * @typedef {Object} HistoryEntry
-   * @property {string} doseId
-   * @property {string} medicationName
-   * @property {string} takenAt
-   */
 
   /** @type {string} */
   let _storageKey;
 
-  // ── Internal helpers ──────────────────────────────────────────────
-
-  /**
-   * Load the history array from localStorage.
-   * @returns {HistoryEntry[]}
-   */
+  // Load history array from localStorage.
   function _load() {
     try {
       const raw = window.localStorage.getItem(_storageKey);
@@ -29,10 +16,7 @@
     }
   }
 
-  /**
-   * Persist the history array to localStorage.
-   * @param {HistoryEntry[]} entries
-   */
+  // Persist history array to localStorage.
   function _save(entries) {
     try {
       window.localStorage.setItem(_storageKey, JSON.stringify(entries));
@@ -41,66 +25,75 @@
     }
   }
 
-  // ── Public API ────────────────────────────────────────────────────
-
   /**
-   * Initialises the history store using the given localStorage key.
-   * Must be called once before any logging operation.
+   * Initialises the history store.
    * @param {string} storageKey
    */
   function initLogging(storageKey) {
     _storageKey = storageKey;
-    // Ensure the key exists with an empty array.
     if (!window.localStorage.getItem(_storageKey)) {
       _save([]);
     }
   }
 
   /**
-   * Records that the dose with the given id has been taken.
-   * Stores a HistoryEntry with the current timestamp.
-   * No‑op if the doseId is already taken (avoids duplicates).
-   *
-   * @param {string} doseId - unique identifier for the dose
-   * @param {string} [medicationName] - friendly name of the medication
+   * Records a taken dose.
+   * @param {string} doseId
+   * @param {string} [medicationName]
    */
   function markDoseTaken(doseId, medicationName) {
     if (!doseId) return;
-
     const entries = _load();
-
-    // Prevent duplicate entries for the same doseId.
-    if (entries.some(function (e) { return e.doseId === doseId; })) {
-      return;
-    }
-
+    if (entries.some(e => e.doseId === doseId)) return;
     const entry = {
       doseId: doseId,
       medicationName: medicationName || '',
       takenAt: new Date().toISOString(),
     };
-
     entries.push(entry);
     _save(entries);
   }
 
   /**
-   * Returns all logged history entries, newest first.
-   * @returns {HistoryEntry[]}
+   * Returns history entries, optionally filtered.
+   * @param {{ medicationName?: string, fromDate?: Date, toDate?: Date }} [filter]
+   * @returns {Array<{doseId: string, medicationName: string, takenAt: string}>}
    */
-  function getHistory() {
+  function getHistory(filter) {
     const entries = _load();
-    // Sort descending by takenAt (newest first)
-    entries.sort(function (a, b) {
-      return new Date(b.takenAt).getTime() - new Date(a.takenAt).getTime();
+    if (!filter) return entries.slice();
+    // TODO: implement filtering
+    return entries.filter(entry => {
+      if (filter.medicationName && entry.medicationName !== filter.medicationName) return false;
+      if (filter.fromDate || filter.toDate) {
+        const taken = new Date(entry.takenAt);
+        if (filter.fromDate && taken < filter.fromDate) return false;
+        if (filter.toDate && taken > filter.toDate) return false;
+      }
+      return true;
     });
-    return entries;
   }
 
-  // Expose the public API
+  /**
+   * Clears all history.
+   */
+  function clearHistory() {
+    _save([]);
+  }
+
+  /**
+   * Exports history as JSON string.
+   * @returns {string}
+   */
+  function exportHistory() {
+    return JSON.stringify(_load());
+  }
+
   window.MedRemLogging = {
-    initLogging: initLogging,
-    markDoseTaken: markDoseTaken,
-    getHistory: getHistory,
+    initLogging,
+    markDoseTaken,
+    getHistory,
+    clearHistory,
+    exportHistory
   };
 })();

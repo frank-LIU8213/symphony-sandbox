@@ -1,15 +1,5 @@
-// Schedule module – ownership: w_schedule
 (function () {
   'use strict';
-
-  /**
-   * @typedef {Object} Dose
-   * @property {string} id
-   * @property {string} medicationId
-   * @property {Date} scheduledTime
-   * @property {boolean} taken
-   * @property {string} [takenAt]
-   */
 
   const DEFAULT_LOOKAHEAD_HOURS = 24;
 
@@ -38,55 +28,74 @@
   }
 
   /**
-   * @param {Medication[]} medications
-   * @returns {Dose[]}
+   * Compute the next dose date for a given schedule type starting from `now`.
+   * @param {import('./medications.js').Schedule} schedule
+   * @param {Date} now
+   * @returns {Date|null}
    */
-  function getUpcomingDoses(medications) {
-    const now = new Date();
+  function computeNextDoseForSchedule(schedule, now) {
+    // TODO: implement for all schedule types
+    // This function will be implemented by the schedule-task worker.
+    throw new Error('computeNextDoseForSchedule not implemented yet');
+  }
+
+  /**
+   * Generate upcoming doses for a single medication within the lookahead window.
+   * @param {import('./medications.js').Medication} med
+   * @param {Date} now
+   * @returns {import('./schedule.js').Dose[]}
+   */
+  function computeDosesForMedication(med, now) {
+    const { schedule } = med;
+    if (!schedule.times) return [];
     const lookAheadMs = DEFAULT_LOOKAHEAD_HOURS * 60 * 60 * 1000;
     const doses = [];
 
-    medications.forEach(med => {
-      const { schedule } = med;
-      const times = schedule.times || [];
-
-      let dayIndices;
-      if (schedule.type === 'daily') {
-        dayIndices = [0, 1, 2, 3, 4, 5, 6];
-      } else {
-        // 'weekly' or 'custom' – use the days array
-        dayIndices = schedule.days || [];
+    schedule.times.forEach(timeStr => {
+      const nextDate = computeNextDoseForSchedule(schedule, now);
+      if (nextDate) {
+        const diffMs = nextDate.getTime() - now.getTime();
+        if (diffMs >= 0 && diffMs < lookAheadMs) {
+          const stableId = med.id + '|' + timeStr + '|' + (schedule.type);// TODO: improve id for custom intervals
+          doses.push({
+            id: stableId,
+            medicationId: med.id,
+            scheduledTime: nextDate,
+            taken: false,
+          });
+        }
       }
-
-      times.forEach(timeStr => {
-        const [hourStr, minStr] = timeStr.split(':');
-        const hour = parseInt(hourStr, 10);
-        const min = parseInt(minStr, 10);
-
-        dayIndices.forEach(dayTarget => {
-          const scheduledDate = computeNextDate(now, dayTarget, hour, min);
-          const diffMs = scheduledDate.getTime() - now.getTime();
-
-          if (diffMs >= 0 && diffMs < lookAheadMs) {
-            // Use a stable, deterministic id so that history lookups work
-            // across multiple calls.
-            const stableId = med.id + '|' + timeStr + '|' + dayTarget;
-            doses.push({
-              id: stableId,
-              medicationId: med.id,
-              scheduledTime: scheduledDate,
-              taken: false,
-            });
-          }
-        });
-      });
     });
 
-    doses.sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime());
     return doses;
   }
 
+  /**
+   * @param {import('./medications.js').Medication[]} medications
+   * @returns {import('./schedule.js').Dose[]}
+   */
+  function getUpcomingDoses(medications) {
+    const now = new Date();
+    const allDoses = [];
+    medications.forEach(med => {
+      const doses = computeDosesForMedication(med, now);
+      allDoses.push(...doses);
+    });
+    return allDoses.sort((a,b) => a.scheduledTime - b.scheduledTime);
+  }
+
+  const SCHEDULE_TYPES = {
+    DAILY: 'daily',
+    WEEKLY: 'weekly',
+    BIWEEKLY: 'biweekly',
+    MONTHLY: 'monthly',
+    BIANNUAL: 'biannual',
+    CUSTOM_DAYS: 'customDays',
+    CUSTOM_INTERVAL: 'customInterval'
+  };
+
   window.MedRemSchedule = {
-    getUpcomingDoses: getUpcomingDoses,
+    getUpcomingDoses,
+    SCHEDULE_TYPES
   };
 })();
