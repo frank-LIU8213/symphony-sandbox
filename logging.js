@@ -62,9 +62,12 @@
   function getHistory(filter) {
     const entries = _load();
     if (!filter) return entries.slice();
-    // TODO: implement filtering
     return entries.filter(entry => {
-      if (filter.medicationName && entry.medicationName !== filter.medicationName) return false;
+      if (filter.medicationName) {
+        // Case‑insensitive substring match
+        const query = filter.medicationName.toLowerCase();
+        if (!entry.medicationName.toLowerCase().includes(query)) return false;
+      }
       if (filter.fromDate || filter.toDate) {
         const taken = new Date(entry.takenAt);
         if (filter.fromDate && taken < filter.fromDate) return false;
@@ -72,6 +75,19 @@
       }
       return true;
     });
+  }
+
+  /**
+   * Removes a single history entry by doseId.
+   * @param {string} doseId
+   */
+  function removeHistoryEntry(doseId) {
+    if (!doseId) return;
+    const entries = _load();
+    const idx = entries.findIndex(e => e.doseId === doseId);
+    if (idx === -1) return;
+    entries.splice(idx, 1);
+    _save(entries);
   }
 
   /**
@@ -93,6 +109,7 @@
     initLogging,
     markDoseTaken,
     getHistory,
+    removeHistoryEntry,
     clearHistory,
     exportHistory
   };
