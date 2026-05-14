@@ -8,11 +8,63 @@
 </head>
 <body>
   <div id="app">
-    <h1>用药提醒</h1>
-    <!-- UI will be rendered here -->
+    <header class="app__header">
+      <h1>💊 用药提醒</h1>
+      <p class="app__subtitle">智能服药管理 · Claude风格</p>
+    </header>
+
+    <!-- 添加药物 -->
+    <section class="card form-card">
+      <h2 class="card__title">添加药物</h2>
+      <form id="medication-form">
+        <div class="form-row">
+          <label>药物名称
+            <input type="text" id="med-name" placeholder="例如：阿司匹林" required>
+          </label>
+          <label>剂量
+            <input type="text" id="med-dosage" placeholder="例如：100mg" required>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>服药时间（24小时制，可多个）
+            <input type="text" id="med-times" placeholder="08:00,20:00" required>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>日程类型
+            <select id="med-schedule-type">
+              <option value="daily">每日</option>
+              <option value="weekly">每周</option>
+              <option value="custom">自定义</option>
+            </select>
+          </label>
+          <label>每周天数（0=周日，逗号分隔）
+            <input type="text" id="med-days" placeholder="1,3,5" value="0,1,2,3,4,5,6">
+          </label>
+        </div>
+        <button type="submit" class="btn btn--primary">添加</button>
+      </form>
+    </section>
+
+    <!-- 药物列表 -->
+    <section class="card" id="medication-section">
+      <h2 class="card__title">已有药物</h2>
+      <div id="medication-list"></div>
+    </section>
+
+    <!-- 即将服用的剂量 -->
+    <section class="card" id="schedule-section">
+      <h2 class="card__title">即将服用的剂量</h2>
+      <div id="upcoming-doses"></div>
+    </section>
+
+    <!-- 服药记录 -->
+    <section class="card" id="history-section">
+      <h2 class="card__title">服药记录</h2>
+      <div id="history-list"></div>
+    </section>
   </div>
 
-  <!-- Module loading order matters – main.js is last -->
   <script src="medications.js"></script>
   <script src="schedule.js"></script>
   <script src="logging.js"></script>
