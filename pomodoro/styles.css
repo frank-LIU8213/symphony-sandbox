@@ -1,0 +1,214 @@
+/* === Reset & box-sizing === */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* === Root variables === */
+:root {
+  --pm-primary: #007AFF;
+  --pm-green: #34C759;
+  --pm-text-primary: #1c1c1e;
+  --pm-text-secondary: #8e8e93;
+  --pm-surface: rgba(255, 255, 255, 0.8);
+  --pm-backdrop-blur: 20px;
+  --pm-ring-track: #e0e0e0;
+}
+
+/* === Body & background-layer === */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #f5f5f7;      /* fallback until background.js loads */
+  color: var(--pm-text-primary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#pm-background-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.9;
+  pointer-events: none;     /* keep interactive underneath */
+}
+
+/* === Main container (iOS-style card) === */
+.pm-container {
+  position: relative;
+  z-index: 1;
+  width: 380px;
+  max-width: 90vw;
+  background: var(--pm-surface);
+  backdrop-filter: blur(var(--pm-backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--pm-backdrop-blur));
+  border-radius: 32px;
+  padding: 32px 24px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+  text-align: center;
+}
+
+/* === Header === */
+.pm-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 24px;
+  color: var(--pm-text-primary);
+}
+
+/* === Timer / SVG ring wrapper === */
+.pm-timer {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 0 auto 24px;
+}
+
+/* The SVG sits in this <div> */
+.pm-svg-ring {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pm-svg-ring svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* === Time & mode text (overlaid on ring) === */
+.pm-time-display {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  font-size: 48px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--pm-text-primary);
+  letter-spacing: 2px;
+}
+
+.pm-mode-indicator {
+  position: absolute;
+  top: calc(50% + 28px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--pm-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* === Controls (buttons) === */
+.pm-controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.pm-btn {
+  background: var(--pm-primary);
+  border: none;
+  border-radius: 14px;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 72px;
+  user-select: none;
+}
+.pm-btn:hover {
+  background: #0066d6;
+}
+.pm-btn:active {
+  transform: scale(0.96);
+}
+
+/* === Settings toggle === */
+.pm-settings-toggle {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--pm-primary);
+  cursor: pointer;
+  user-select: none;
+}
+.pm-settings-toggle:hover {
+  text-decoration: underline;
+}
+
+/* === Settings panel === */
+.pm-settings {
+  display: none;
+  margin-top: 16px;
+  text-align: left;
+}
+.pm-settings[aria-hidden='false'] {
+  display: block;
+}
+
+.pm-settings label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 10px 0 4px;
+  color: #3a3a3c;
+}
+
+.pm-settings input[type='number'],
+.pm-settings select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d1d6;
+  border-radius: 10px;
+  font-size: 14px;
+  background: #ffffff;
+  color: var(--pm-text-primary);
+}
+
+.pm-settings input[type='checkbox'] {
+  margin-left: 8px;
+  transform: scale(1.2);
+}
+
+.pm-settings .pm-btn {
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* === SVG finish/start animations === */
+.pm-finish-animation circle:last-child {
+  animation: pm-pulse 0.6s ease-out;
+}
+@keyframes pm-pulse {
+  0%   { stroke-width: 6; }
+  30%  { stroke-width: 12; stroke-opacity: 0.8; }
+  100% { stroke-width: 6; stroke-opacity: 1; }
+}
+
+.pm-start-animation circle:last-child {
+  animation: pm-fade-scale 0.4s ease-out;
+}
+@keyframes pm-fade-scale {
+  0%   { opacity: 1; transform: scale(1) rotate(-90deg); }
+  50%  { opacity: 0.7; transform: scale(1.04) rotate(-90deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-90deg); }
+}
