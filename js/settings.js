@@ -2,24 +2,42 @@
   'use strict';
   window.Pomodoro = window.Pomodoro || {};
 
-  /**
-   * @returns {Pomodoro.SettingsAPI}
-   */
+  const DEFAULT_SETTINGS = {
+    workDuration: 1500,        // 25 min
+    shortBreakDuration: 300,   // 5 min
+    longBreakDuration: 900     // 15 min
+  };
+
+  let currentMode = 'work';
+  let settings = { ...DEFAULT_SETTINGS };
+  let modeChangeCallbacks = [];
+
   Pomodoro.Settings = {
     init() {
-      throw new Error('Not implemented: Settings.init');
+      currentMode = 'work';
+      settings = { ...DEFAULT_SETTINGS };
+      // Could later load persisted settings from localStorage here
     },
+
     getSettings() {
-      throw new Error('Not implemented: Settings.getSettings');
+      return { ...settings };
     },
+
     setMode(mode) {
-      throw new Error('Not implemented: Settings.setMode');
+      if (mode !== 'work' && mode !== 'shortBreak' && mode !== 'longBreak') {
+        console.error(`Pomodoro.Settings.setMode: invalid mode "${mode}"`);
+        return;
+      }
+      currentMode = mode;
+      modeChangeCallbacks.forEach(cb => cb(mode));
     },
+
     getCurrentMode() {
-      throw new Error('Not implemented: Settings.getCurrentMode');
+      return currentMode;
     },
+
     onModeChange(callback) {
-      throw new Error('Not implemented: Settings.onModeChange');
+      modeChangeCallbacks.push(callback);
     }
   };
 })();
