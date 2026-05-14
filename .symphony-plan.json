@@ -1,0 +1,138 @@
+{
+  "contract": "## Shared Types\n\n- **TimerState** (object): `{ mode: 'work' | 'break', timeRemaining: number (seconds), isRunning: boolean, workDuration: number, breakDuration: number, sessionCount: number }`\n- **TimerMode** (type): `'work' | 'break'`\n- **Custom Events** (dispatched on `document`):\n  - `timer:state-changed` – detail: `TimerState`\n  - `timer:tick` – detail: `TimerState`\n  - `timer:finished` – detail: `{ mode: TimerMode }`\n  - `timer:mode-changed` – detail: `{ mode: TimerMode }`\n\n## API Contract (Interfaces)\n\nAll JavaScript modules use ES6 `export` and are loaded with `<script type=\"module\">`.\n\n### `pomodoro/timer.js`\nDefault export class `PomodoroTimer`:\n- `constructor(config: { workDuration?: number, breakDuration?: number, onStateChange?: (state: TimerState) => void, ... })`\n- `start()`\n- `pause()`\n- `reset()`\n- `skip()`\n- `getState(): TimerState`\n- `setDuration(mode: TimerMode, seconds: number)`\nThe timer internally calls `tick()` every second, dispatches `timer:state-changed`, `timer:tick`, `timer:finished`, and `timer:mode-changed` events on `document`.\n\n### `pomodoro/visuals.js`\nExports:\n- `initVisuals(): (state: TimerState) => void`\n- `updateVisuals(state: TimerState)` (the returned function)\n- (optional) `playAnimation(type: string)` for special animations\n\n### `pomodoro/sound.js`\nExports:\n- `initSounds()`\n- `playTick()`\n- `playAlarm()`\n- `playStart()`\nAll sounds are synthesized via Web Audio API; no external files required.\n\n### `pomodoro/settings.js`\nExports:\n- `Settings` class:\n  - `constructor(defaults?: object)`\n  - `load(): object`\n  - `save(state: object): void`\n  - `get(key: string): any`\n  - `set(key: string, value: any): void`\n  - `onChange(callback: (changed: object) => void)`\n  - default values: `{ workDuration: 1500, breakDuration: 300, soundEnabled: true, backgroundTheme: 'default' }`\n- `initSettings(): void` (binds UI elements in settings panel to Settings instance, updates timer on change)\n\n### `pomodoro/background.js`\nExports:\n- `initBackground(): void` (fetches background image from `https://api.nanobanana2.com/generate?prompt=pomodoro&theme=...` or similar, applies as full-screen background)\n- `updateBackground(theme: string): void` (re-fetches with new theme)\n\n## Naming Conventions\n\n- **CSS classes**: prefix `pm-` (e.g., `pm-timer`, `pm-controls`, `pm-settings`, `pm-svg-ring`). Use kebab-case.\n- **JS variables/functions**: camelCase.\n- **File names**: lowercase with hyphens (already defined).\n- **HTML id attributes**: also prefix with `pm-` (e.g., `pm-timer-display`, `pm-start-btn`).\n- **Event names**: use `timer:` namespace for timer events.",
+  "scaffold_files": [
+    {
+      "path": "pomodoro/index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Pomodoro</title>\n  <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n  <div id=\"pm-background-layer\"></div>\n  <div class=\"pm-container\">\n    <header>\n      <h1 class=\"pm-title\">Focus Timer</h1>\n    </header>\n    <main>\n      <div class=\"pm-timer\">\n        <div class=\"pm-svg-ring\" id=\"pm-ring-container\">\n          <!-- SVG ring will be injected by visuals.js -->\n        </div>\n        <div class=\"pm-time-display\" id=\"pm-time-display\">25:00</div>\n        <div class=\"pm-mode-indicator\" id=\"pm-mode-indicator\">Work</div>\n      </div>\n      <div class=\"pm-controls\">\n        <button id=\"pm-start-btn\" class=\"pm-btn\">Start</button>\n        <button id=\"pm-pause-btn\" class=\"pm-btn\">Pause</button>\n        <button id=\"pm-reset-btn\" class=\"pm-btn\">Reset</button>\n        <button id=\"pm-skip-btn\" class=\"pm-btn\">Skip</button>\n      </div>\n      <div class=\"pm-settings-toggle\" id=\"pm-settings-toggle\" aria-expanded=\"false\" tabindex=\"0\">Settings</div>\n      <div class=\"pm-settings\" id=\"pm-settings\" aria-hidden=\"true\">\n        <label for=\"pm-work-duration\">Work (min)</label>\n        <input type=\"number\" id=\"pm-work-duration\" min=\"1\" max=\"90\" value=\"25\">\n        <label for=\"pm-break-duration\">Break (min)</label>\n        <input type=\"number\" id=\"pm-break-duration\" min=\"1\" max=\"30\" value=\"5\">\n        <label for=\"pm-sound-toggle\">Sound</label>\n        <input type=\"checkbox\" id=\"pm-sound-toggle\" checked>\n        <label for=\"pm-theme-select\">Background Theme</label>\n        <select id=\"pm-theme-select\">\n          <option value=\"default\">Default</option>\n          <option value=\"nature\">Nature</option>\n          <option value=\"abstract\">Abstract</option>\n        </select>\n        <button id=\"pm-save-settings\" class=\"pm-btn\">Save</button>\n      </div>\n    </main>\n  </div>\n  <script type=\"module\" src=\"timer.js\"></script>\n  <script type=\"module\" src=\"visuals.js\"></script>\n  <script type=\"module\" src=\"sound.js\"></script>\n  <script type=\"module\" src=\"settings.js\"></script>\n  <script type=\"module\" src=\"background.js\"></script>\n</body>\n</html>\n"
+    },
+    {
+      "path": "pomodoro/timer.js",
+      "content": "/** Core timer logic for the Pomodoro app. */\n\n/**\n * @typedef {Object} TimerState\n * @property {'work'|'break'} mode\n * @property {number} timeRemaining - seconds\n * @property {boolean} isRunning\n * @property {number} workDuration - seconds\n * @property {number} breakDuration - seconds\n * @property {number} sessionCount\n */\n\nexport default class PomodoroTimer {\n  /**\n   * @param {Object} config\n   * @param {number} [config.workDuration=1500]\n   * @param {number} [config.breakDuration=300]\n   * @param {(state: TimerState) => void} [config.onStateChange]\n   */\n  constructor({\n    workDuration = 1500,\n    breakDuration = 300,\n    onStateChange,\n  } = {}) {\n    throw new Error('Not implemented');\n  }\n\n  start() { throw new Error('Not implemented'); }\n  pause() { throw new Error('Not implemented'); }\n  reset() { throw new Error('Not implemented'); }\n  skip() { throw new Error('Not implemented'); }\n\n  /** @returns {TimerState} */\n  getState() { throw new Error('Not implemented'); }\n\n  /**\n   * @param {'work'|'break'} mode\n   * @param {number} seconds\n   */\n  setDuration(mode, seconds) { throw new Error('Not implemented'); }\n}\n"
+    },
+    {
+      "path": "pomodoro/visuals.js",
+      "content": "/** SVG ring animation and visual updates for the Pomodoro timer. */\n\n/**\n * Initialises the SVG ring inside #pm-ring-container and returns an update function.\n * @returns {(state: import('./timer.js').TimerState) => void}\n */\nexport function initVisuals() {\n  throw new Error('Not implemented');\n}\n\n/**\n * Update the ring and other visual elements based on the current timer state.\n * @param {import('./timer.js').TimerState} state\n */\nexport function updateVisuals(state) {\n  throw new Error('Not implemented');\n}\n\n/**\n * (Optional) Play a special animation, e.g., 'finish' or 'start'.\n * @param {string} type\n */\nexport function playAnimation(type) {\n  throw new Error('Not implemented');\n}\n"
+    },
+    {
+      "path": "pomodoro/sound.js",
+      "content": "/** Sound effects synthesised via Web Audio API. */\n\n/** Pre-creates audio context and buffers. Must be called before first play. */\nexport function initSounds() {\n  throw new Error('Not implemented');\n}\n\n/** Play a short tick sound. */\nexport function playTick() {\n  throw new Error('Not implemented');\n}\n\n/** Play the alarm sound (end of timer). */\nexport function playAlarm() {\n  throw new Error('Not implemented');\n}\n\n/** Play a sound when starting or resuming the timer. */\nexport function playStart() {\n  throw new Error('Not implemented');\n}\n"
+    },
+    {
+      "path": "pomodoro/settings.js",
+      "content": "/** Settings persistence and UI binding. */\n\nconst DEFAULTS = {\n  workDuration: 1500,  // seconds\n  breakDuration: 300,\n  soundEnabled: true,\n  backgroundTheme: 'default',\n};\n\nexport class Settings {\n  /**\n   * @param {Object} [defaults] – overrides\n   */\n  constructor(defaults = {}) {\n    throw new Error('Not implemented');\n  }\n\n  /** @returns {Object} current settings from localStorage (merged with defaults). */\n  load() { throw new Error('Not implemented'); }\n\n  /** @param {Object} state */\n  save(state) { throw new Error('Not implemented'); }\n\n  /** @param {string} key */\n  get(key) { throw new Error('Not implemented'); }\n\n  /** @param {string} key @param {*} value */\n  set(key, value) { throw new Error('Not implemented'); }\n\n  /** @param {(changed: Object) => void} callback */\n  onChange(callback) { throw new Error('Not implemented'); }\n}\n\n/**\n * Initialise settings panel UI: bind input elements in #pm-settings to a Settings instance,\n * wire save button, and update timer durations via timer.setDuration().\n */\nexport function initSettings() {\n  throw new Error('Not implemented');\n}\n"
+    },
+    {
+      "path": "pomodoro/background.js",
+      "content": "/** Fetches and displays an AI-generated background image using nano banana2. */\n\n/**\n * Apply a full-screen background. Fetches from the API on first call and on theme change.\n * Uses the default theme (from settings) if no argument provided.\n */\nexport function initBackground() {\n  throw new Error('Not implemented');\n}\n\n/**\n * @param {string} theme - the theme key to fetch a new background for.\n */\nexport function updateBackground(theme) {\n  throw new Error('Not implemented');\n}\n"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w0",
+      "task": "User can start, pause, reset, and skip a Pomodoro timer (work/break cycle). A basic text countdown is visible.",
+      "acceptance_criteria": [
+        "Clicking Start begins the countdown from 25:00; display updates every second.",
+        "Pause halts the countdown without resetting the time.",
+        "Reset stops the timer and resets to 25:00.",
+        "Skip immediately switches from work to break (or break to work) and resets the duration.",
+        "When timer reaches 0, an alert or console log indicates the end and the mode cycles (work -> break -> work).",
+        "The timer dispatches custom events `timer:state-changed`, `timer:tick`, `timer:finished`, and `timer:mode-changed` on `document`."
+      ],
+      "files_owned": [
+        "pomodoro/timer.js"
+      ],
+      "files_readonly": [
+        "pomodoro/index.html",
+        "pomodoro/visuals.js",
+        "pomodoro/sound.js",
+        "pomodoro/settings.js",
+        "pomodoro/background.js"
+      ]
+    },
+    {
+      "id": "w1",
+      "task": "User sees an iOS‑style SVG progress ring that smoothly animates as the timer counts down, with colour changes between work and break modes.",
+      "acceptance_criteria": [
+        "An SVG ring is rendered inside #pm-ring-container with a stroke that represents 0–100% of the current mode's duration.",
+        "The ring’s stroke colour is red for work and green for break.",
+        "When the timer ticks, the ring updates proportionally with a smooth transition (CSS transition or requestAnimationFrame).",
+        "The time display text updates every second and is visually integrated with the ring.",
+        "Layout is responsive and follows iOS design cues (e.g., large timer text, centred controls)."
+      ],
+      "files_owned": [
+        "pomodoro/visuals.js",
+        "pomodoro/styles.css"
+      ],
+      "files_readonly": [
+        "pomodoro/index.html",
+        "pomodoro/timer.js",
+        "pomodoro/sound.js",
+        "pomodoro/settings.js",
+        "pomodoro/background.js"
+      ]
+    },
+    {
+      "id": "w2",
+      "task": "User hears a tick sound every second while the timer is running, an alarm when a session ends, and a start sound on play — all synthesised without external files.",
+      "acceptance_criteria": [
+        "A tick sound plays each time the `timer:tick` event fires (every second while running).",
+        "An alarm sound plays when `timer:finished` is dispatched.",
+        "A short start sound plays when the timer transitions from paused/stopped to running.",
+        "Sound enabling/disabling is controlled by the `soundEnabled` setting (checked via Settings instance); when disabled, no audio is produced.",
+        "All sounds are generated via Web Audio API (no `<audio>` elements or external files)."
+      ],
+      "files_owned": [
+        "pomodoro/sound.js"
+      ],
+      "files_readonly": [
+        "pomodoro/index.html",
+        "pomodoro/timer.js",
+        "pomodoro/visuals.js",
+        "pomodoro/settings.js",
+        "pomodoro/background.js"
+      ]
+    },
+    {
+      "id": "w3",
+      "task": "User can customise work/break durations, toggle sound, and choose a background theme; these preferences are saved and survive page reloads.",
+      "acceptance_criteria": [
+        "The settings panel is toggled open/closed by clicking the settings toggle button.",
+        "Changing the Work Duration (minutes) and Break Duration (minutes) inputs and clicking Save immediately updates the timer durations (via timer.setDuration).",
+        "The Sound checkbox enables/disables sound globally (the sound module reacts to the setting).",
+        "The Background Theme select box triggers a background refresh via updateBackground.",
+        "All settings are stored in localStorage and restored on page reload.",
+        "The timer's initial durations reflect the saved settings."
+      ],
+      "files_owned": [
+        "pomodoro/settings.js"
+      ],
+      "files_readonly": [
+        "pomodoro/index.html",
+        "pomodoro/timer.js",
+        "pomodoro/visuals.js",
+        "pomodoro/sound.js",
+        "pomodoro/background.js"
+      ]
+    },
+    {
+      "id": "w4",
+      "task": "User sees an AI‑generated background image (via nano banana2 API) that changes when the theme is switched.",
+      "acceptance_criteria": [
+        "On app load, the background layer (#pm-background-layer) is filled with an image fetched from `https://api.nanobanana2.com/generate?prompt=pomodoro&theme=default` (or an equivalent proxy).",
+        "When the background theme is changed in settings, `updateBackground(theme)` fetches a new image and applies it as the background.",
+        "If the image fetch fails, a fallback solid colour (light grey) is shown and an error is logged.",
+        "The image covers the full viewport without distortion (e.g., background-size: cover, background-position: centre)."
+      ],
+      "files_owned": [
+        "pomodoro/background.js"
+      ],
+      "files_readonly": [
+        "pomodoro/index.html",
+        "pomodoro/timer.js",
+        "pomodoro/visuals.js",
+        "pomodoro/sound.js",
+        "pomodoro/settings.js"
+      ]
+    }
+  ]
+}
