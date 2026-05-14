@@ -1,1 +1,82 @@
 /* Decorations module styles. Prefix with 'med-decor-'. */
+
+/* ---- Background gradient bar (subtle) ---- */
+.med-decor-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 280px;
+  background: linear-gradient(135deg, var(--claude-accent) 0%, var(--claude-surface) 100%);
+  z-index: -2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.med-decor-header__text {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--claude-accent);
+  opacity: 0.08;
+  user-select: none;
+}
+
+/* ---- Footer ---- */
+.med-decor-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: var(--claude-surface);
+  color: var(--claude-muted);
+  font-size: 0.75rem;
+  text-align: center;
+  z-index: 1;
+  border-top: 1px solid var(--claude-border);
+}
+
+/* ---- Floating decorative elements ---- */
+.med-decor-floating-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.med-decor-pill,
+.med-decor-leaf {
+  position: absolute;
+  will-change: translate;
+}
+
+.med-decor-pill {
+  border-radius: 50%;
+  animation: med-decor-float-pill 12s ease-in-out infinite;
+}
+
+.med-decor-leaf {
+  border-radius: 50%;
+  animation: med-decor-float-leaf 14s ease-in-out infinite;
+}
+
+@keyframes med-decor-float-pill {
+  0%   { translate: 0 0; }
+  25%  { translate: 8px -12px; }
+  50%  { translate: -6px -18px; }
+  75%  { translate: 10px -8px; }
+  100% { translate: 0 0; }
+}
+
+@keyframes med-decor-float-leaf {
+  0%   { translate: 0 0; }
+  33%  { translate: -12px -20px; }
+  66%  { translate: 14px -14px; }
+  100% { translate: 0 0; }
+}
