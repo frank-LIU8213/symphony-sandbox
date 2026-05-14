@@ -1,4 +1,4 @@
-/* Base styles – ownership: w_integrator */
+/* Base styles – ownership: w_design */
 /* Claude‑style warm terracotta palette with gentle gradients */
 
 :root {
@@ -22,10 +22,23 @@ body {
   margin: 0;
   padding: 2rem 1rem;
   min-height: 100vh;
-  /* generated background image via nano‑banana2 */
+  /* generated background image via nano‑banana2 – muted by overlay in background.js */
   background: url('generated-images/generated.jpg') center / cover no-repeat fixed;
   color: var(--claude-text);
   line-height: 1.6;
+}
+
+/* Additional overlay via CSS for instant effect before JS runs */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(250, 245, 239, 0.82);
+  z-index: 0;
+  pointer-events: none;
 }
 
 #app {
@@ -34,6 +47,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .app__header {
@@ -96,6 +111,14 @@ body {
   background: #fff;
 }
 
+/* Hidden schedule fields (shown/hidden by JS) */
+.schedule-extra-row {
+  display: none;
+}
+.schedule-extra-row.is-visible {
+  display: flex;
+}
+
 .btn {
   display: inline-block;
   padding: 0.55rem 1.4rem;
@@ -149,6 +172,68 @@ body {
 
 .btn--success:hover {
   background: #1e8449;
+}
+
+/* Settings toggles (switch style) */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--claude-border);
+}
+
+.toggle-row:last-child {
+  border-bottom: none;
+}
+
+.toggle-label {
+  font-weight: 500;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 34px;
+}
+
+.slider::before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.switch input:checked + .slider {
+  background-color: var(--claude-accent);
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(20px);
 }
 
 /* Medication list items */
