@@ -1,0 +1,137 @@
+{
+  "contract": "## Shared Types\n\n- **TimerState**: `\"idle\" | \"running\" | \"paused\"`\n- **SessionMode**: `\"work\" | \"shortBreak\" | \"longBreak\"`\n- **TimerSettings**: object `{ workDuration: number, shortBreakDuration: number, longBreakDuration: number }` (all in seconds).\n- **TimerCallbacks**: `{ onTick?: (remainingSeconds: number, totalSeconds: number) => void, onComplete?: () => void }`\n- **AudioAssetNames**: `'timerEnd' | 'click'`\n- **AnimationController**: `{ updateProgress: (fraction: number) => void, pulse: () => void }`\n\n## API Contract (Module Interface)\n\nEvery module exposes itself as a property of the global `window.Pomodoro` namespace. The integrator will access them through `Pomodoro.*`.\n\n### Pomodoro.Timer\n```typescript\n// Factory: Pomodoro.createTimer(settings: TimerSettings) returns TimerInstance\ninterface TimerInstance {\n  start(): void;\n  pause(): void;\n  reset(): void;\n  getRemainingTime(): number;\n  getState(): TimerState;\n  setCallbacks(callbacks: TimerCallbacks): void;\n}\n```\n\n### Pomodoro.Settings\n```typescript\ninterface SettingsAPI {\n  init(): void;\n  getSettings(): TimerSettings;\n  setMode(mode: SessionMode): void;\n  getCurrentMode(): SessionMode;\n  onModeChange(callback: (mode: SessionMode) => void): void;\n}\n```\n\n### Pomodoro.Audio\n```typescript\ninterface AudioAPI {\n  init(): void;  // preloads sounds\n  playSound(name: AudioAssetNames): void;\n}\n```\n\n### Pomodoro.Animation\n```typescript\nPomodoro.Animation.init(containerId: string): AnimationController\n```\n\n### Pomodoro.Background\n```typescript\ninterface BackgroundAPI {\n  setBackgroundImage(): void;  // fetches image and applies as background\n}\n```\n\n## Naming Conventions\n\n- **CSS class names**: BEM-like, `pomodoro__block--modifier`. Examples: `.pomodoro__circle`, `.pomodoro__button--start`.\n- **DOM IDs**: `timer-display`, `btn-start`, `btn-pause`, `btn-reset`, `mode-selector`, `circle-progress`, `app-background`.\n- **JS global namespace**: `window.Pomodoro`.\n- **JS function/variable names**: camelCase.\n- **Audio file paths**: `sounds/end.mp3`, `sounds/click.mp3` (files must be provided in the project).\n- **Background image**: fetched from API endpoint (URL defined in Background module), resulting image used as CSS `background-image` on `#app-background`.\n- **File organization**: All JS modules under `js/`, CSS under `css/`.",
+  "scaffold_files": [
+    {
+      "path": "pomodoro.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, viewport-fit=cover\">\n  <title>Pomodoro</title>\n  <link rel=\"stylesheet\" href=\"css/styles.css\">\n</head>\n<body>\n  <div id=\"app-background\">\n    <div class=\"pomodoro\">\n      <div class=\"pomodoro__circle-container\">\n        <svg id=\"circle-progress\" viewBox=\"0 0 100 100\" class=\"pomodoro__circle\">\n          <circle cx=\"50\" cy=\"50\" r=\"45\" fill=\"none\" stroke=\"#e0e0e0\" stroke-width=\"8\"/>\n          <circle id=\"circle-progress-fill\" cx=\"50\" cy=\"50\" r=\"45\" fill=\"none\" stroke=\"#ff6b6b\" stroke-width=\"8\"\n                  stroke-dasharray=\"283\" stroke-dashoffset=\"0\" stroke-linecap=\"round\"\n                  transform=\"rotate(-90 50 50)\"/>\n        </svg>\n        <div id=\"timer-display\" class=\"pomodoro__timer\">25:00</div>\n      </div>\n      <div class=\"pomodoro__controls\">\n        <button id=\"btn-start\" class=\"pomodoro__button pomodoro__button--start\">Start</button>\n        <button id=\"btn-pause\" class=\"pomodoro__button pomodoro__button--pause\">Pause</button>\n        <button id=\"btn-reset\" class=\"pomodoro__button pomodoro__button--reset\">Reset</button>\n      </div>\n      <div class=\"pomodoro__mode\">\n        <label for=\"mode-selector\">Session:</label>\n        <select id=\"mode-selector\" class=\"pomodoro__selector\">\n          <option value=\"work\" selected>Work</option>\n          <option value=\"shortBreak\">Short Break</option>\n          <option value=\"longBreak\">Long Break</option>\n        </select>\n      </div>\n    </div>\n    <audio id=\"audio-element\" preload=\"auto\" style=\"display:none;\"></audio>\n  </div>\n  <script src=\"js/settings.js\"></script>\n  <script src=\"js/timer.js\"></script>\n  <script src=\"js/audio.js\"></script>\n  <script src=\"js/animations.js\"></script>\n  <script src=\"js/background.js\"></script>\n  <script src=\"js/main.js\"></script>\n</body>\n</html>"
+    },
+    {
+      "path": "js/settings.js",
+      "content": "(function() {\n  'use strict';\n  window.Pomodoro = window.Pomodoro || {};\n\n  /**\n   * @returns {Pomodoro.SettingsAPI}\n   */\n  Pomodoro.Settings = {\n    init() {\n      throw new Error('Not implemented: Settings.init');\n    },\n    getSettings() {\n      throw new Error('Not implemented: Settings.getSettings');\n    },\n    setMode(mode) {\n      throw new Error('Not implemented: Settings.setMode');\n    },\n    getCurrentMode() {\n      throw new Error('Not implemented: Settings.getCurrentMode');\n    },\n    onModeChange(callback) {\n      throw new Error('Not implemented: Settings.onModeChange');\n    }\n  };\n})();"
+    },
+    {
+      "path": "js/timer.js",
+      "content": "(function() {\n  'use strict';\n  window.Pomodoro = window.Pomodoro || {};\n\n  /**\n   * @param {import('./contract').TimerSettings} settings\n   * @returns {import('./contract').TimerInstance}\n   */\n  Pomodoro.createTimer = function(settings) {\n    throw new Error('Not implemented: createTimer');\n  };\n})();"
+    },
+    {
+      "path": "js/audio.js",
+      "content": "(function() {\n  'use strict';\n  window.Pomodoro = window.Pomodoro || {};\n\n  /** @type {import('./contract').AudioAPI} */\n  Pomodoro.Audio = {\n    init() {\n      throw new Error('Not implemented: Audio.init');\n    },\n    playSound(name) {\n      throw new Error('Not implemented: Audio.playSound');\n    }\n  };\n})();"
+    },
+    {
+      "path": "js/animations.js",
+      "content": "(function() {\n  'use strict';\n  window.Pomodoro = window.Pomodoro || {};\n\n  /**\n   * @param {string} containerId\n   * @returns {import('./contract').AnimationController}\n   */\n  Pomodoro.Animation = {\n    init(containerId) {\n      throw new Error('Not implemented: Animation.init');\n    }\n  };\n})();"
+    },
+    {
+      "path": "js/background.js",
+      "content": "(function() {\n  'use strict';\n  window.Pomodoro = window.Pomodoro || {};\n\n  /** @type {import('./contract').BackgroundAPI} */\n  Pomodoro.Background = {\n    setBackgroundImage() {\n      throw new Error('Not implemented: Background.setBackgroundImage');\n    }\n  };\n})();"
+    },
+    {
+      "path": "css/styles.css",
+      "content": "/* Base styles for pomodoro app – placeholder */\nbody { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }\n.pomodoro { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }\n"
+    },
+    {
+      "path": "js/main.js",
+      "content": "// Entry point – to be implemented by integrator\ndocument.addEventListener('DOMContentLoaded', () => {\n  console.log('Pomodoro app starting...');\n});"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w1",
+      "task": "User can start a focus timer, see countdown, and pause/reset it.",
+      "acceptance_criteria": [
+        "Clicking Start starts countdown from work duration (default 1500s).",
+        "Timer display (`#timer-display`) updates every second showing MM:SS.",
+        "Clicking Pause pauses countdown; timer stops updating.",
+        "Clicking Start again after pause resumes from remaining time.",
+        "Clicking Reset stops timer and resets display to initial duration.",
+        "The Timer module exposes correct state via `getState()` ('idle', 'running', 'paused') after each action."
+      ],
+      "files_owned": [
+        "js/timer.js"
+      ],
+      "files_readonly": [
+        "pomodoro.html"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w2",
+      "task": "User hears an alert sound when the timer finishes.",
+      "acceptance_criteria": [
+        "Calling `Pomodoro.Audio.init()` preloads `sounds/end.mp3` and `sounds/click.mp3` (files must exist).",
+        "`Pomodoro.Audio.playSound('timerEnd')` plays the audio immediately (no errors in console).",
+        "`Pomodoro.Audio.playSound('click')` plays a click sound.",
+        "No JavaScript errors during init or play."
+      ],
+      "files_owned": [
+        "js/audio.js"
+      ],
+      "files_readonly": [
+        "pomodoro.html"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w3",
+      "task": "User can switch between work, short break, and long break modes.",
+      "acceptance_criteria": [
+        "Mode selector dropdown (`#mode-selector`) contains options Work, Short Break, Long Break.",
+        "Selecting a mode calls `onModeChange` callback with the correct `SessionMode`.",
+        "`getSettings()` returns durations: work=1500, shortBreak=300, longBreak=900.",
+        "`setMode()` programmatically changes the active mode and updates the dropdown selection.",
+        "UI reflects current mode after page load (default Work)."
+      ],
+      "files_owned": [
+        "js/settings.js"
+      ],
+      "files_readonly": [
+        "pomodoro.html"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w4",
+      "task": "User sees an animated circular progress ring and a dynamically generated background image.",
+      "acceptance_criteria": [
+        "SVG circle progress ring (`#circle-progress-fill`) visually fills proportionally when `Animation.updateProgress(fraction)` is called (0 to 1).",
+        "`Animation.pulse()` triggers a visual pulse animation on the circle.",
+        "`Background.setBackgroundImage()` fetches an image from the banana2 endpoint and sets it as CSS background of `#app-background`, with no CORS errors.",
+        "CSS (`css/styles.css`) provides iOS-like typography, button styles, and layout."
+      ],
+      "files_owned": [
+        "js/animations.js",
+        "js/background.js",
+        "css/styles.css"
+      ],
+      "files_readonly": [
+        "pomodoro.html"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w_integrator",
+      "task": "Integrate all modules into a fully working pomodoro app. Wire timer, audio, settings, animations, and background together so user can run complete pomodoro cycles.",
+      "acceptance_criteria": [
+        "On page load, all modules are initialized in correct order (Settings, Timer, Audio, Animation, Background).",
+        "Clicking Start creates a Timer with current mode's duration, starts countdown, updates display and animation on tick.",
+        "When timer completes, audio plays and the session mode automatically advances (work → short break or long break based on cycle count).",
+        "Changing mode via dropdown resets timer with the new duration.",
+        "Background image is set on load.",
+        "Every button is functional without console errors; app works end-to-end as a pomodoro timer."
+      ],
+      "files_owned": [
+        "pomodoro.html",
+        "js/main.js"
+      ],
+      "files_readonly": [
+        "js/timer.js",
+        "js/audio.js",
+        "js/settings.js",
+        "js/animations.js",
+        "js/background.js",
+        "css/styles.css"
+      ],
+      "is_integrator": true
+    }
+  ]
+}
