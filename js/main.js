@@ -27,6 +27,23 @@
       return settings.longBreakDuration;
     }
 
+    var sessionCount = 0;
+
+    function advanceSession() {
+      var mode = Pomodoro.Settings.getCurrentMode();
+      if (mode === 'work') {
+        sessionCount++;
+        if (sessionCount % 4 === 0) {
+          Pomodoro.Settings.setMode('longBreak');
+        } else {
+          Pomodoro.Settings.setMode('shortBreak');
+        }
+      } else {
+        // break completed, switch back to work
+        Pomodoro.Settings.setMode('work');
+      }
+    }
+
     // --------------------------------------------------
     // 3. Timer lifecycle
     // --------------------------------------------------
@@ -41,6 +58,7 @@
       var settings = Pomodoro.Settings.getSettings();
       var total = getCurrentDuration(settings);
       currentTimer = Pomodoro.createTimer(settings);
+      currentTimer.duration = total;   // ensure the timer uses the correct duration for the current mode
 
       currentTimer.setCallbacks({
         onTick: function(remaining, totalSeconds) {
@@ -51,6 +69,7 @@
         onComplete: function() {
           Pomodoro.Audio.playSound('timerEnd');
           animationCtrl.pulse();
+          advanceSession();
         }
       });
 
@@ -81,9 +100,12 @@
 
     document.getElementById('btn-reset').addEventListener('click', function() {
       Pomodoro.Audio.playSound('click');
-      currentTimer.reset();
       var settings = Pomodoro.Settings.getSettings();
       var total = getCurrentDuration(settings);
+      if (currentTimer) {
+        currentTimer.duration = total;
+        currentTimer.reset();
+      }
       document.getElementById('timer-display').textContent = formatTime(total);
       animationCtrl.updateProgress(1);
     });
