@@ -1,0 +1,129 @@
+{
+  "contract": "## Shared Types\n\n- **Board**: 2D array (8x8) where each cell is `null` (empty), `'black'`, or `'white'`.\n- **Position**: `{ row: number, col: number }`\n- **FlippedDiscs**: array of `Position` objects.\n- **Score**: `{ black: number, white: number }`\n- **Player**: `'black'` | `'white'`\n- **GameResult**: `'black'` | `'white'` | `'draw'` | `null`\n- DOM IDs used in HTML: `#app` (main container), `#board` (board element), `#info-panel` (score/turn/reset area).\n\n## API Contract\n\n### gameLogic.js\n\nConstants:\n- `BOARD_SIZE = 8`\n- `BLACK = 'black'`\n- `WHITE = 'white'`\n\nExported functions:\n- `createBoard(): Board` – returns initial board with 4 centre discs (BLACK on (3,4) & (4,3), WHITE on (3,3) & (4,4)).\n- `isValidMove(board: Board, row: number, col: number, player: Player): boolean`\n- `getFlippedDiscs(board: Board, row: number, col: number, player: Player): Position[]` – discs that would be flipped if moved here.\n- `placeDisc(board: Board, row: number, col: number, player: Player): { newBoard: Board, flippedDiscs: Position[] }` – returns updated board (shallow copy) and flipped positions.\n- `getValidMoves(board: Board, player: Player): Position[]`\n- `getScore(board: Board): Score`\n- `isGameOver(board: Board): boolean`\n- `getWinner(board: Board): Player | 'draw' | null` – returns winner or draw or null if not over.\n\n### boardRenderer.js\n\nClass `BoardRenderer`:\n- `constructor(containerElement: HTMLElement, options?: { onCellClick?: (row: number, col: number) => void })`\n  - Builds board DOM inside `containerElement`.\n  - `onCellClick` called when a cell is clicked (passes row,col).\n  - Board element must have id `board`.\n- `render(board: Board, validMoves: Position[] = [])`\n  - Updates DOM to reflect board state; adds class `.valid-move` to cells that are in validMoves.\n  - Each cell must have class `.cell` and, if occupied, a child `.disc` with class `.disc--black` or `.disc--white`.\n- `highlightFlipping(cells: Position[])`\n  - Adds CSS class `.disc--flipping` to each disc in those cells and removes it after 300ms.\n- `destroy()` – removes board DOM.\n\n### infoPanel.js\n\nFunction `createInfoPanel(containerElement: HTMLElement)` returns an object:\n- `updateScore(black: number, white: number): void` – updates score texts (elements with id `black-score`, `white-score`).\n- `updateTurn(player: Player): void` – updates turn indicator (element with id `turn-indicator`).\n- `showGameOver(winner: Player | 'draw', score: Score): void` – displays a modal/dialog with winner and final score; must have a close button.\n- `reset(callback: () => void): void` – attaches click handler to a reset button (id `reset-btn`) that invokes callback.\n\n### generateBackground.js\n\n- `loadBackgroundImage(): Promise<string>` – returns a promise that resolves to a CSS `url(...)` string (or `none`) to be set as `document.body.style.backgroundImage`.\n\n### Integration driver (main.js)\n\n- `import { createBoard, getValidMoves, placeDisc, getScore, isGameOver, getWinner } from './gameLogic.js';`\n- `import { BoardRenderer } from './boardRenderer.js';`\n- `import { createInfoPanel } from './infoPanel.js';`\n- `import { loadBackgroundImage } from './generateBackground.js';`\n\nRuns on `DOMContentLoaded`, wires modules:\n  1. Calls `loadBackgroundImage` and applies result.\n  2. Creates `BoardRenderer` inside `#app`, passing `onCellClick` handler that executes game logic.\n  3. Calls `createInfoPanel` to get info panel methods; attaches reset callback.\n  4. Maintains current turn (`'black'` initially) and calls `render`/update methods after each valid move.\n  5. After move, checks `isGameOver` and calls `showGameOver` if true.\n\n## Naming Conventions\n\n- **Files**: lowercase with hyphens (e.g., `game-logic.js`, but we use `gameLogic.js` for JS module convention; CSS: `styles.css`).\n- **JavaScript**:\n  - Functions: `camelCase` (e.g., `createBoard`, `isValidMove`).\n  - Classes: `PascalCase` (e.g., `BoardRenderer`).\n  - Constants: `UPPER_SNAKE` (e.g., `BOARD_SIZE`, `PLAYER_BLACK`).\n  - Variables: `camelCase`.\n- **CSS classes**: BEM-like: `.board` (block), `.board__cell` (element), `.board__cell--valid` (modifier). However for simplicity, we use: `.cell` (element), `.cell.valid-move`, `.disc`, `.disc--black`, `.disc--white`, `.disc--flipping`, `.info-panel`, `.info-panel__score`, `.info-panel__turn`, `.info-panel__reset-btn`, `.game-over`, `.game-over__message`, `.game-over__winner`.\n- **DOM IDs**: lowercase with hyphens, unique per element: `#board`, `#app`, `#info-panel`, `#black-score`, `#white-score`, `#turn-indicator`, `#reset-btn`, `#game-over-modal`.\n- **Event handler names**: `onCellClick`, `reset`.\n- **Module exports**: each module exports only the public API defined above; no direct DOM manipulation outside its own container.",
+  "scaffold_files": [
+    {
+      "path": "reversi/gameLogic.js",
+      "content": "export const BOARD_SIZE = 8;\nexport const BLACK = 'black';\nexport const WHITE = 'white';\n\nexport function createBoard() {\n  throw new Error('Not implemented');\n}\n\nexport function isValidMove(board, row, col, player) {\n  throw new Error('Not implemented');\n}\n\nexport function getFlippedDiscs(board, row, col, player) {\n  throw new Error('Not implemented');\n}\n\nexport function placeDisc(board, row, col, player) {\n  throw new Error('Not implemented');\n}\n\nexport function getValidMoves(board, player) {\n  throw new Error('Not implemented');\n}\n\nexport function getScore(board) {\n  throw new Error('Not implemented');\n}\n\nexport function isGameOver(board) {\n  throw new Error('Not implemented');\n}\n\nexport function getWinner(board) {\n  throw new Error('Not implemented');\n}\n"
+    },
+    {
+      "path": "reversi/boardRenderer.js",
+      "content": "export class BoardRenderer {\n  constructor(containerElement, options = {}) {\n    this.container = containerElement;\n    this.onCellClick = options.onCellClick || (() => {});\n    this._buildDOM();\n  }\n\n  _buildDOM() {\n    // Create board element with id=\"board\" and append to container\n    // Each cell gets class \"cell\"\n    // Leaves implementation to worker\n    throw new Error('Not implemented');\n  }\n\n  render(board, validMoves = []) {\n    // Update cell classes and disc elements to reflect board state\n    throw new Error('Not implemented');\n  }\n\n  highlightFlipping(cells) {\n    // Add class 'disc--flipping' to discs at given positions, remove after 300ms\n    throw new Error('Not implemented');\n  }\n\n  destroy() {\n    throw new Error('Not implemented');\n  }\n}\n"
+    },
+    {
+      "path": "reversi/infoPanel.js",
+      "content": "export function createInfoPanel(containerElement) {\n  // Create #info-panel with score, turn, reset button, and game-over modal\n  // Returns object with update methods\n  throw new Error('Not implemented');\n}\n"
+    },
+    {
+      "path": "reversi/styles.css",
+      "content": "/* Placeholder – worker will populate fully */\n"
+    },
+    {
+      "path": "reversi/generateBackground.js",
+      "content": "export async function loadBackgroundImage() {\n  // Returns a promise that resolves to a CSS url() string for background image\n  throw new Error('Not implemented');\n}\n"
+    },
+    {
+      "path": "index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Reversi</title>\n  <link rel=\"stylesheet\" href=\"reversi/styles.css\">\n</head>\n<body>\n  <div id=\"app\"></div>\n  <script type=\"module\" src=\"reversi/main.js\"></script>\n</body>\n</html>\n"
+    },
+    {
+      "path": "reversi/main.js",
+      "content": "import { createBoard, getValidMoves, placeDisc, getScore, isGameOver, getWinner } from './gameLogic.js';\nimport { BoardRenderer } from './boardRenderer.js';\nimport { createInfoPanel } from './infoPanel.js';\nimport { loadBackgroundImage } from './generateBackground.js';\n\ndocument.addEventListener('DOMContentLoaded', async () => {\n  // Integration – worker will implement wiring\n  // 1. Apply background\n  // 2. Create board renderer, info panel\n  // 3. Handle cell clicks, update state, propagate to UI\n  // 4. Show game over when needed\n  throw new Error('Not implemented');\n});\n"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w1",
+      "task": "User can play a move on the board and see discs placed and flipped immediately.",
+      "acceptance_criteria": [
+        "Initial board renders with 2 black and 2 white discs in standard starting positions (d4,e4 white; d5,e5 black).",
+        "Clicking a valid empty cell places a disc of the current player’s color and flips opponent’s discs according to Reversi rules; board DOM updates accordingly.",
+        "After a valid move, turn automatically advances to the other player; the next click attempts to place the opposite color.",
+        "Clicking an invalid cell (no valid moves) does not alter the board state or turn.",
+        "Game logic functions (isValidMove, placeDisc, getValidMoves) correctly implement the full rule set (adjacent capture, line flipping)."
+      ],
+      "files_owned": [
+        "reversi/gameLogic.js",
+        "reversi/boardRenderer.js"
+      ],
+      "files_readonly": [
+        "index.html",
+        "reversi/styles.css",
+        "reversi/infoPanel.js",
+        "reversi/generateBackground.js",
+        "reversi/main.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w2",
+      "task": "User sees a gorgeous, polished board with animated disc flipping and a custom background image.",
+      "acceptance_criteria": [
+        "CSS class `.disc--flipping` triggers a smooth 300ms rotateY or scale animation that makes flipping discs visually disappear and reappear with the opposite color.",
+        "The board cells have nice borders, padding, and hover effects matching an Airbnb-style clean aesthetic.",
+        "`generateBackground.js` produces a URL or data URI via nano banana2 that is applied as `document.body.style.backgroundImage`; fallback gracefully if generation fails.",
+        "All required CSS classes (`.cell`, `.cell.valid-move`, `.disc`, `.disc--black`, `.disc--white`, `.disc--flipping`, `.info-panel`, etc.) are defined and produce a cohesive design.",
+        "Animations do not break the board layout or responsiveness."
+      ],
+      "files_owned": [
+        "reversi/styles.css",
+        "reversi/generateBackground.js"
+      ],
+      "files_readonly": [
+        "index.html",
+        "reversi/gameLogic.js",
+        "reversi/boardRenderer.js",
+        "reversi/infoPanel.js",
+        "reversi/main.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w3",
+      "task": "User can see the score, whose turn it is, and a reset button; when the game ends, a winner announcement shows.",
+      "acceptance_criteria": [
+        "Score display shows initial counts: 2 black, 2 white, and updates in real time after every move.",
+        "Turn indicator text changes between 'Black's turn' and 'White's turn' correctly starting with black.",
+        "Reset button clears the board to initial state, resets score and turn, and hides any game-over message.",
+        "When no moves remain for both players, a modal/dialog appears showing 'Black wins!', 'White wins!', or 'Draw!' with final score.",
+        "The game-over modal has a close button that dismisses it."
+      ],
+      "files_owned": [
+        "reversi/infoPanel.js"
+      ],
+      "files_readonly": [
+        "index.html",
+        "reversi/gameLogic.js",
+        "reversi/boardRenderer.js",
+        "reversi/styles.css",
+        "reversi/generateBackground.js",
+        "reversi/main.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w_integrator",
+      "task": "User plays complete Reversi from page load to reset – all pieces connected: board, animations, info, background.",
+      "acceptance_criteria": [
+        "Page loads without errors; background image is applied (or fallback), board and info panel are visible.",
+        "Clicking a cell triggers `onCellClick`, which executes `placeDisc`, updates `BoardRenderer.render`, calls `highlightFlipping` for flipped cells, and updates info panel via `updateScore`/`updateTurn`.",
+        "After each move, turn indicator and score reflect correct state.",
+        "When reset button is clicked, `BoardRenderer.render(createBoard())` is called, info panel reset, and turn back to black.",
+        "`isGameOver` is checked after each move; if true, `showGameOver` is called with the result from `getWinner` and final score.",
+        "No DOM references from one module leak into another; all cross-module communication uses the defined API.",
+        "Works without console errors."
+      ],
+      "files_owned": [
+        "index.html",
+        "reversi/main.js"
+      ],
+      "files_readonly": [
+        "reversi/gameLogic.js",
+        "reversi/boardRenderer.js",
+        "reversi/styles.css",
+        "reversi/infoPanel.js",
+        "reversi/generateBackground.js"
+      ],
+      "is_integrator": true
+    }
+  ]
+}
