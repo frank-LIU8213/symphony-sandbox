@@ -59,7 +59,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: filter 0.2s;
   /* alternating colours using nth-child – works because grid is row‑major */
+}
+
+.cell:hover {
+  filter: brightness(1.2);
 }
 
 .cell:nth-child(odd) {

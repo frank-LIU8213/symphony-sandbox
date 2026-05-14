@@ -1,4 +1,4 @@
-import { createBoard, getValidMoves, placeDisc, getScore, isGameOver, getWinner } from './gameLogic.js';
+import { createBoard, getValidMoves, placeDisc, getScore, isGameOver, getWinner, isValidMove } from './gameLogic.js';
 import { BoardRenderer } from './boardRenderer.js';
 import { createInfoPanel } from './infoPanel.js';
 import { loadBackgroundImage } from './generateBackground.js';
@@ -89,6 +89,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 5. Reset callback
   infoPanel.reset(() => {
+    // Hide the game-over modal if it is currently displayed
+    const modal = document.getElementById('game-over-modal');
+    if (modal) modal.style.display = 'none';
+
     board = createBoard();
     currentPlayer = 'black';
     const validMoves = getValidMoves(board, currentPlayer);
