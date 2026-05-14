@@ -27,43 +27,178 @@
     return result;
   }
 
-  /**
-   * Compute the next dose date for a given schedule type starting from `now`.
-   * @param {import('./medications.js').Schedule} schedule
-   * @param {Date} now
-   * @returns {Date|null}
-   */
-  function computeNextDoseForSchedule(schedule, now) {
-    // TODO: implement for all schedule types
-    // This function will be implemented by the schedule-task worker.
-    throw new Error('computeNextDoseForSchedule not implemented yet');
+  // ---------- schedule-type helpers ----------
+
+  function parseTime(timeStr) {
+    const parts = timeStr.split(':');
+    return [parseInt(parts[0], 10), parseInt(parts[1], 10)];
   }
 
+  function dailyNext(now, hour, min) {
+    const candidate = new Date(now);
+    candidate.setHours(hour, min, 0, 0);
+    if (candidate.getTime() < now.getTime()) {
+      candidate.setDate(candidate.getDate() + 1);
+    }
+    return candidate;
+  }
+
+  function weeklyOrCustomDaysNext(schedule, timeStr, now) {
+    const [hour, min] = parseTime(timeStr);
+    const days = schedule.days;
+    if (!days || !days.length) return [];
+    const results = [];
+    for (const d of days) {
+      const dnum = Number(d);
+      if (isNaN(dnum) || dnum < 0 || dnum > 6) continue;
+      results.push(computeNextDate(now, dnum, hour, min));
+    }
+    return results;
+  }
+
+  function biweeklyNext(schedule, timeStr, now) {
+    const [hour, min] = parseTime(timeStr);
+    const startDate = schedule.startDate;
+    if (!startDate) return null;
+    const intervalWeeks = schedule.intervalValue || 2; // default 2 weeks
+    const start = new Date(startDate);
+    start.setHours(hour, min, 0, 0);
+    let candidate = new Date(start);
+    const intervalMs = intervalWeeks * 7 * 24 * 60 * 60 * 1000;
+    while (candidate.getTime() < now.getTime()) {
+      candidate = new Date(candidate.getTime() + intervalMs);
+    }
+    return candidate;
+  }
+
+  function monthlyNext(schedule, timeStr, now) {
+    const [hour, min] = parseTime(timeStr);
+    const startDate = schedule.startDate;
+    const dayOfMonth = schedule.dayOfMonth;
+    if (!startDate || typeof dayOfMonth !== 'number') return null;
+    const start = new Date(startDate);
+    start.setHours(hour, min, 0, 0);
+    let year = start.getFullYear();
+    let month = start.getMonth();
+    while (true) {
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const d = Math.min(dayOfMonth, lastDay);
+      const candidate = new Date(year, month, d, hour, min, 0, 0);
+      if (candidate.getTime() >= now.getTime()) {
+        return candidate;
+      }
+      month++;
+      if (month > 11) {
+        month = 0;
+        year++;
+      }
+    }
+  }
+
+  function biannualNext(schedule, timeStr, now) {
+    const [hour, min] = parseTime(timeStr);
+    const startDate = schedule.startDate;
+    if (!startDate) return null;
+    const intervalMonths = schedule.intervalValue || 6; // default 6 months
+    const start = new Date(startDate);
+    start.setHours(hour, min, 0, 0);
+    let candidate = new Date(start);
+    while (candidate.getTime() < now.getTime()) {
+      candidate.setMonth(candidate.getMonth() + intervalMonths);
+    }
+    return candidate;
+  }
+
+  function customIntervalNext(schedule, timeStr, now) {
+    const [hour, min] = parseTime(timeStr);
+    const startDate = schedule.startDate;
+    if (!startDate) return null;
+    const intervalValue = schedule.intervalValue || 1;
+    const unit = schedule.intervalUnit || 'day';
+    const start = new Date(startDate);
+    start.setHours(hour, min, 0, 0);
+    let candidate = new Date(start);
+    while (candidate.getTime() < now.getTime()) {
+      if (unit === 'day') {
+        candidate.setDate(candidate.getDate() + intervalValue);
+      } else if (unit === 'week') {
+        candidate.setDate(candidate.getDate() + intervalValue * 7);
+      } else { // month
+        candidate.setMonth(candidate.getMonth() + intervalValue);
+      }
+    }
+    return candidate;
+  }
+
+  // ---------- dose computation ----------
+
   /**
-   * Generate upcoming doses for a single medication within the lookahead window.
    * @param {import('./medications.js').Medication} med
    * @param {Date} now
    * @returns {import('./schedule.js').Dose[]}
    */
   function computeDosesForMedication(med, now) {
     const { schedule } = med;
-    if (!schedule.times) return [];
+    if (!schedule || !Array.isArray(schedule.times)) return [];
+
     const lookAheadMs = DEFAULT_LOOKAHEAD_HOURS * 60 * 60 * 1000;
     const doses = [];
 
     schedule.times.forEach(timeStr => {
-      const nextDate = computeNextDoseForSchedule(schedule, now);
-      if (nextDate) {
-        const diffMs = nextDate.getTime() - now.getTime();
-        if (diffMs >= 0 && diffMs < lookAheadMs) {
-          const stableId = med.id + '|' + timeStr + '|' + (schedule.type);// TODO: improve id for custom intervals
-          doses.push({
-            id: stableId,
-            medicationId: med.id,
-            scheduledTime: nextDate,
-            taken: false,
-          });
+      let candidates = [];
+
+      switch (schedule.type) {
+        case 'daily': {
+          const [hour, min] = parseTime(timeStr);
+          candidates.push(dailyNext(now, hour, min));
+          break;
         }
+        case 'weekly':
+        case 'customDays': {
+          candidates = weeklyOrCustomDaysNext(schedule, timeStr, now);
+          break;
+        }
+        case 'biweekly': {
+          const c = biweeklyNext(schedule, timeStr, now);
+          if (c) candidates.push(c);
+          break;
+        }
+        case 'monthly': {
+          const c = monthlyNext(schedule, timeStr, now);
+          if (c) candidates.push(c);
+          break;
+        }
+        case 'biannual': {
+          const c = biannualNext(schedule, timeStr, now);
+          if (c) candidates.push(c);
+          break;
+        }
+        case 'customInterval': {
+          const c = customIntervalNext(schedule, timeStr, now);
+          if (c) candidates.push(c);
+          break;
+        }
+        default:
+          // unknown type → skip
+          break;
+      }
+
+      for (const candidate of candidates) {
+        const diffMs = candidate.getTime() - now.getTime();
+        if (diffMs < 0 || diffMs >= lookAheadMs) continue;
+
+        const id =
+          med.id + '|' +
+          timeStr + '|' +
+          schedule.type + '|' +
+          candidate.toISOString();
+
+        doses.push({
+          id: id,
+          medicationId: med.id,
+          scheduledTime: candidate,
+          taken: false,
+        });
       }
     });
 
@@ -81,7 +216,7 @@
       const doses = computeDosesForMedication(med, now);
       allDoses.push(...doses);
     });
-    return allDoses.sort((a,b) => a.scheduledTime - b.scheduledTime);
+    return allDoses.sort((a, b) => a.scheduledTime - b.scheduledTime);
   }
 
   const SCHEDULE_TYPES = {
