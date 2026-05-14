@@ -1,2 +1,54 @@
-/* Animations module styles. Each class must be prefixed with 'med-anim-'. */
-/* Agent will add keyframes and classes here. */
+/* Animations module styles. Prefix with 'med-anim-'. */
+
+@keyframes med-anim-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes med-anim-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(177, 91, 58, 0.4);
+  }
+  70% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 10px rgba(177, 91, 58, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(177, 91, 58, 0);
+  }
+}
+
+@keyframes med-anim-taken {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+.med-anim-fade-in {
+  animation: med-anim-fadeIn 0.4s ease-out both;
+}
+
+.med-anim-pulse {
+  animation: med-anim-pulse 1.4s ease-in-out infinite;
+}
+
+.med-anim-taken {
+  animation: med-anim-taken 0.35s ease-out forwards;
+}
