@@ -7,14 +7,51 @@
   /** @type {Set<string>} */
   let notifiedIds = new Set();
 
-  /** @type {HTMLAudioElement|null} */
-  let audio = null;
+  /** @type {AudioContext|null} */
+  let audioCtx = null;
 
   /** @type {number|null} */
   let intervalId = null;
 
   let _soundEnabled = true;
   let _notificationEnabled = true;
+
+  // ---------------------------------------------------------------
+  // Internal helpers
+  // ---------------------------------------------------------------
+
+  function ensureAudioCtx() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioCtx;
+  }
+
+  /**
+   * Plays a short sine beep through the Web Audio API.
+   * @param {number} [freq=880]
+   * @param {number} [duration=0.15]
+   * @param {number} [volume=0.3]
+   */
+  function playBeep(freq, duration, volume) {
+    if (freq === undefined) freq = 880;
+    if (duration === undefined) duration = 0.15;
+    if (volume === undefined) volume = 0.3;
+    try {
+      const ctx = ensureAudioCtx();
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const gain = ctx.createGain();
+      gain.gain.value = volume;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch (_) {
+      // silently ignore – audio not supported
+    }
+  }
 
   // ---------------------------------------------------------------
   // Public API
@@ -83,11 +120,9 @@
           }
         }
 
-        // ---- Audio cue ----
-        if (_soundEnabled && audio) {
-          // only play if sound enabled (audio object will be managed elsewhere)
-          // Existing audio logic will be preserved inside this block
-          // TODO: integrate audio player based on enabled flag
+        // ---- Audio cue (only when the dose is actually due) ----
+        if (_soundEnabled) {
+          playBeep();
         }
       }
     }
@@ -116,11 +151,23 @@
     acknowledgeDose
   };
 
-  // -------- internal helpers (keep existing) --------
+  // -------- internal helpers --------
+
   function startPolling() {
     if (intervalId !== null) return;
     intervalId = setInterval(function () {
-      // Polling will be wired by integrator; this stub just keeps interval alive.
+      try {
+        // If schedule and medications modules are available, fetch doses automatically.
+        var meds = window.MedRemMedications && typeof window.MedRemMedications.getMedications === 'function'
+          ? window.MedRemMedications.getMedications()
+          : [];
+        var doses = window.MedRemSchedule && typeof window.MedRemSchedule.getUpcomingDoses === 'function'
+          ? window.MedRemSchedule.getUpcomingDoses(meds)
+          : [];
+        checkAndNotify(doses);
+      } catch (_) {
+        // Silently ignore – modules may not be ready yet
+      }
     }, INTERVAL_MS);
   }
 
