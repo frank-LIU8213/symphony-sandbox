@@ -1,6 +1,22 @@
 import { Board, PathFinder } from './game.js';
 import { createBoardSvg, animatePath, removeTile, drawScore } from './renderer.js';
 
+// Inject a CSS animation for the "shake" feedback when no path exists
+const _shakeStyle = document.createElement('style');
+_shakeStyle.textContent = `
+    @keyframes tile-shake {
+        0% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        50% { transform: translateX(5px); }
+        75% { transform: translateX(-5px); }
+        100% { transform: translateX(0); }
+    }
+    .tile-shake {
+        animation: tile-shake 0.3s ease;
+    }
+`;
+document.head.appendChild(_shakeStyle);
+
 let board;
 let selected = null;
 let score = 0;
@@ -33,13 +49,22 @@ function handleClick(event, svgElement, scoreElement) {
     if (!tile) return;
 
     if (selected) {
+        // Clicking the same tile: deselect
         if (selected.row === row && selected.col === col) {
             target.classList.remove('tile-selected');
             selected = null;
             return;
         }
+
+        // Remove visual highlight from the previously selected tile
+        const oldSelectedEl = svgElement.querySelector(`#tile-${selected.row}-${selected.col}`);
+        if (oldSelectedEl) {
+            oldSelectedEl.classList.remove('tile-selected');
+        }
+
         const path = PathFinder.findPath(board, selected, tile);
         if (path) {
+            // Valid match: animate connection, then remove both tiles
             animatePath(path, svgElement, () => {
                 removeTile(selected.row, selected.col, svgElement, () => {
                     board.remove(selected.row, selected.col);
@@ -55,13 +80,15 @@ function handleClick(event, svgElement, scoreElement) {
             });
             selected = null;
         } else {
-            const oldEl = svgElement.querySelector(`#tile-${selected.row}-${selected.col}`);
-            if (oldEl) oldEl.classList.remove('tile-selected');
-            target.classList.add('tile-selected');
-            setTimeout(() => target.classList.remove('tile-selected'), 300);
+            // No valid path: shake the clicked tile and clear selection
+            target.classList.add('tile-shake');
+            setTimeout(() => {
+                target.classList.remove('tile-shake');
+            }, 300);
             selected = null;
         }
     } else {
+        // First click: select the tile
         target.classList.add('tile-selected');
         selected = { row, col };
     }
