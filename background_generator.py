@@ -1,16 +1,29 @@
-"""Generate background image using nano banana2 API."""
+"""Generate background image using nano banana2 API or a warm gradient fallback."""
 import sys
 import os
+import shutil
+
 
 def generate_background(output_path: str, width: int = 1024, height: int = 768) -> None:
-    """Call the nano banana2 image generation API and save the result.
+    """Generate a background image for the game.
 
-    Uses a generated gradient as a suitable mock when the API is not available.
+    Prefers the nano‑banana‑2 generated image located at
+    `generated-images/generated.jpg`.  Falls back to a soft warm gradient.
     """
     if os.path.exists(output_path):
         print(f"File {output_path} already exists, skipping generation")
         return
 
+    # Try to copy the pre‑generated image from nano banana 2
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    generated_path = os.path.join(script_dir, 'generated-images', 'generated.jpg')
+    if os.path.exists(generated_path):
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        shutil.copy(generated_path, output_path)
+        print(f"Copied nano‑banana‑2 generated image to {output_path}")
+        return
+
+    # Fallback: produce a warm linear gradient (Airbnb‑inspired palette)
     try:
         from PIL import Image, ImageDraw
     except ImportError:
@@ -19,12 +32,11 @@ def generate_background(output_path: str, width: int = 1024, height: int = 768) 
         open(output_path, 'wb').close()
         return
 
-    # Create a soft, warm gradient as a realistic mock background
     img = Image.new('RGB', (width, height))
     draw = ImageDraw.Draw(img)
 
-    # top-to-bottom gradient from seashell to muted tan (evocative of Airbnb palette)
-    top = (255, 245, 238)   # seashell
+    # Warm gradient from seashell to muted tan
+    top = (255, 245, 238)     # seashell
     bottom = (214, 190, 170)  # muted tan
 
     for y in range(height):
@@ -37,9 +49,24 @@ def generate_background(output_path: str, width: int = 1024, height: int = 768) 
             b = int(top[2] + (bottom[2] - top[2]) * t)
         draw.line([(0, y), (width - 1, y)], fill=(r, g, b))
 
+    # Add a soft warm circle (sun) at the top centre for extra character
+    sun_radius = width // 8
+    sun_center = (width // 2, height // 3)
+    sun_color = (253, 174, 120)   # warm peach
+    draw.ellipse(
+        [
+            sun_center[0] - sun_radius,
+            sun_center[1] - sun_radius,
+            sun_center[0] + sun_radius,
+            sun_center[1] + sun_radius,
+        ],
+        fill=sun_color,
+    )
+
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     img.save(output_path, 'JPEG')
-    print(f"Generated background at {output_path} (gradient)")
+    print(f"Generated background at {output_path} (warm gradient with sun)")
+
 
 if __name__ == '__main__':
     output = 'static/bg.jpg'
