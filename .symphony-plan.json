@@ -1,0 +1,115 @@
+{
+  "contract": "## Shared Types\n\n- `Position`: `{ row: number, col: number }`  \n- `Tile`: `{ type: number, row: number, col: number }` – `type` is an integer identifier for the symbol (1..N).  \n- `Board`: represented as a 2D array `Tile[][]` (or `null` for empty cells after removal).  \n- `Path`: `Array<Position>` – the ordered set of points (including start, turn corners, end) that the connecting line travels through.  \n\n## API Contract\n\n### game.js – Game Logic Module\n\n- `export class Board {`  \n    `constructor(width: number, height: number, tileTypes: number)`  \n    `getTile(row: number, col: number): Tile | null`  \n    `remove(row: number, col: number): void`  \n    `isCleared(): boolean`  \n  `}`\n- `export class PathFinder {`  \n    `static findPath(board: Board, start: Position, end: Position): Path | null`  \n  `}`  \n  Returns `null` if no valid path with at most two bends connecting same‑type tiles that are both present.\n\n### renderer.js – SVG Rendering & Animation\n\n- `export function createBoardSvg(board: Board, svgElement: SVGSVGElement): void`  \n  Clears the SVG and draws a grid. Each tile is a `<rect>` with `id=\"tile-{row}-{col}\"` and `class=\"tile tile-type-{type}\"`. Removed cells show empty space.\n- `export function animatePath(path: Path, svgElement: SVGSVGElement, callback: () => void): void`  \n  Draws a polyline along the path, smoothly animates its appearance, and calls `callback` after the animation (duration ≈ 0.8 s).\n- `export function removeTile(row: number, col: number, svgElement: SVGSVGElement, callback: () => void): void`  \n  Fades out the tile and removes it from the DOM; calls `callback` after the fade completes.\n- `export function drawScore(score: number, containerElement: HTMLElement): void`  \n  Updates the score display element (id `score`) with the current score.\n\n### ui.js – User Interaction Handler\n\n- `export function initGame(svgElement: SVGSVGElement, scoreElement: HTMLElement): void`  \n  Creates a new `Board` (10 columns × 8 rows, 4 tile types), renders it, binds click events, and manages selection state.  \n  Selection flow:  \n    - First click: highlight tile (CSS class `tile-selected`).  \n    - Second click on a different tile: call `PathFinder.findPath`. If a path exists, animate it, then remove both tiles with animation, update score (+10), and redraw. If no path, briefly shake the selection and clear.  \n    - Click on already selected tile: deselect.  \n    - After each successful match, check `board.isCleared()`; when cleared, show \"Congratulations!\" (e.g., `alert`).\n- `export function getBoard(): Board` – returns the current board instance (for testing).\n\n### background_generator.py – Background Image Generation\n\n- `def generate_background(output_path: str, width: int = 1024, height: int = 768) -> None`  \n  Uses the “nano banana2” API (or a suitable mock) to produce a JPEG image and saves it to `output_path`.  \n  When run as `__main__`, it calls `generate_background` with `static/bg.jpg` as default.\n\n### main.js – Application Entry Point (Integrator)\n\n- Imports `initGame` from `./ui.js`.\n- On `DOMContentLoaded`, selects the SVG `#game-board` and the score `#score` and calls `initGame`.\n\n### index.html – Page Shell (Integrator)\n\n- Contains a `div` with `id=\"score\"` and an `<svg>` with `id=\"game-board\"` (width 600, height 480).\n- Loads `main.js` as a module script.\n- Background image is applied via CSS (`background: url('static/bg.jpg') …`).\n\n## Naming Conventions\n\n- All JavaScript function and method names: **camelCase** (e.g., `findPath`, `createBoardSvg`).\n- File names: lowercase, single word or hyphenated (e.g., `game.js`, `background_generator.py`).\n- CSS classes: `tile`, `tile-selected`, `tile-type-{n}`, `score-container`.\n- SVG element `id` pattern: `tile-{row}-{col}`, `connection-path`.\n- Board dimensions: **width** (columns) first, then **height** (rows) in all APIs.\n- Tile types: integer from 1 to `tileTypes` (inclusive).",
+  "scaffold_files": [
+    {
+      "path": "background_generator.py",
+      "content": "\"\"\"Generate background image using nano banana2 API.\"\"\"\nimport sys\nimport os\n\ndef generate_background(output_path: str, width: int = 1024, height: int = 768) -> None:\n    \"\"\"Call the nano banana2 image generation API and save the result.\"\"\"\n    # Placeholder: create a solid-colour image if the API is not implemented yet.\n    if os.path.exists(output_path):\n        print(f\"File {output_path} already exists, skipping generation\")\n        return\n    try:\n        from PIL import Image\n    except ImportError:\n        print(\"PIL not available; creating an empty placeholder file.\")\n        os.makedirs(os.path.dirname(output_path), exist_ok=True)\n        open(output_path, 'wb').close()\n        return\n    img = Image.new('RGB', (width, height), color=(135, 206, 235))\n    os.makedirs(os.path.dirname(output_path), exist_ok=True)\n    img.save(output_path)\n    print(f\"Generated placeholder background at {output_path}\")\n\nif __name__ == '__main__':\n    output = 'static/bg.jpg'\n    if len(sys.argv) > 1:\n        output = sys.argv[1]\n    generate_background(output)\n"
+    },
+    {
+      "path": "game.js",
+      "content": "export class Board {\n    constructor(width, height, tileTypes) {\n        this.width = width;\n        this.height = height;\n        this.tileTypes = tileTypes;\n        this.grid = [];\n        for (let r = 0; r < height; r++) {\n            const row = [];\n            for (let c = 0; c < width; c++) {\n                row.push(null);\n            }\n            this.grid.push(row);\n        }\n    }\n\n    getTile(row, col) {\n        if (row < 0 || row >= this.height || col < 0 || col >= this.width) return null;\n        return this.grid[row][col];\n    }\n\n    remove(row, col) {\n        if (this.grid[row] && this.grid[row][col]) {\n            this.grid[row][col] = null;\n        }\n    }\n\n    isCleared() {\n        for (let r = 0; r < this.height; r++) {\n            for (let c = 0; c < this.width; c++) {\n                if (this.grid[r][c] !== null) return false;\n            }\n        }\n        return true;\n    }\n}\n\nexport class PathFinder {\n    static findPath(board, start, end) {\n        // Basic direct-line check for the stub; full algorithm to be implemented.\n        const t1 = board.getTile(start.row, start.col);\n        const t2 = board.getTile(end.row, end.col);\n        if (!t1 || !t2 || t1.type !== t2.type) return null;\n\n        if (start.row === end.row) {\n            let minC = Math.min(start.col, end.col);\n            let maxC = Math.max(start.col, end.col);\n            for (let c = minC + 1; c < maxC; c++) {\n                if (board.getTile(start.row, c) !== null) return null;\n            }\n            return [{row: start.row, col: start.col}, {row: end.row, col: end.col}];\n        } else if (start.col === end.col) {\n            let minR = Math.min(start.row, end.row);\n            let maxR = Math.max(start.row, end.row);\n            for (let r = minR + 1; r < maxR; r++) {\n                if (board.getTile(r, start.col) !== null) return null;\n            }\n            return [{row: start.row, col: start.col}, {row: end.row, col: end.col}];\n        }\n        // TODO: implement full 0/1/2-bend pathfinding\n        return null;\n    }\n}\n"
+    },
+    {
+      "path": "renderer.js",
+      "content": "export function createBoardSvg(board, svgElement) {\n    svgElement.innerHTML = '';\n    const cellSize = 60;\n    for (let r = 0; r < board.height; r++) {\n        for (let c = 0; c < board.width; c++) {\n            const tile = board.getTile(r, c);\n            const x = c * cellSize;\n            const y = r * cellSize;\n            if (tile) {\n                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');\n                rect.setAttribute('x', x);\n                rect.setAttribute('y', y);\n                rect.setAttribute('width', cellSize);\n                rect.setAttribute('height', cellSize);\n                rect.setAttribute('class', `tile tile-type-${tile.type}`);\n                rect.setAttribute('id', `tile-${r}-${c}`);\n                svgElement.appendChild(rect);\n            }\n        }\n    }\n}\n\nexport function animatePath(path, svgElement, callback) {\n    const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');\n    const points = path.map(p => `${p.col * 60 + 30},${p.row * 60 + 30}`).join(' ');\n    polyline.setAttribute('points', points);\n    polyline.setAttribute('fill', 'none');\n    polyline.setAttribute('stroke', 'gold');\n    polyline.setAttribute('stroke-width', 4);\n    polyline.setAttribute('id', 'connection-path');\n    svgElement.appendChild(polyline);\n    setTimeout(() => {\n        svgElement.removeChild(polyline);\n        callback();\n    }, 800);\n}\n\nexport function removeTile(row, col, svgElement, callback) {\n    const tileEl = svgElement.querySelector(`#tile-${row}-${col}`);\n    if (tileEl) {\n        tileEl.setAttribute('opacity', 0);\n        setTimeout(() => {\n            tileEl.remove();\n            callback();\n        }, 400);\n    } else {\n        callback();\n    }\n}\n\nexport function drawScore(score, containerElement) {\n    containerElement.textContent = `Score: ${score}`;\n}\n"
+    },
+    {
+      "path": "ui.js",
+      "content": "import { Board, PathFinder } from './game.js';\nimport { createBoardSvg, animatePath, removeTile, drawScore } from './renderer.js';\n\nlet board;\nlet selected = null;\nlet score = 0;\n\nexport function initGame(svgElement, scoreElement) {\n    board = new Board(10, 8, 4);\n    // Randomly populate the board for the stub; real implementation may shuffle properly.\n    for (let r = 0; r < board.height; r++) {\n        for (let c = 0; c < board.width; c++) {\n            const type = Math.floor(Math.random() * 4) + 1;\n            board.grid[r][c] = { row: r, col: c, type };\n        }\n    }\n    createBoardSvg(board, svgElement);\n    drawScore(score, scoreElement);\n    svgElement.addEventListener('click', (event) => handleClick(event, svgElement, scoreElement));\n}\n\nexport function getBoard() {\n    return board;\n}\n\nfunction handleClick(event, svgElement, scoreElement) {\n    const target = event.target;\n    if (!target || !target.id.startsWith('tile-')) return;\n    const parts = target.id.split('-');\n    const row = parseInt(parts[1]);\n    const col = parseInt(parts[2]);\n    const tile = board.getTile(row, col);\n    if (!tile) return;\n\n    if (selected) {\n        if (selected.row === row && selected.col === col) {\n            target.classList.remove('tile-selected');\n            selected = null;\n            return;\n        }\n        const path = PathFinder.findPath(board, selected, tile);\n        if (path) {\n            animatePath(path, svgElement, () => {\n                removeTile(selected.row, selected.col, svgElement, () => {\n                    board.remove(selected.row, selected.col);\n                    removeTile(row, col, svgElement, () => {\n                        board.remove(row, col);\n                        score += 10;\n                        drawScore(score, scoreElement);\n                        if (board.isCleared()) {\n                            alert('Congratulations! You cleared the board!');\n                        }\n                    });\n                });\n            });\n            selected = null;\n        } else {\n            const oldEl = svgElement.querySelector(`#tile-${selected.row}-${selected.col}`);\n            if (oldEl) oldEl.classList.remove('tile-selected');\n            target.classList.add('tile-selected');\n            setTimeout(() => target.classList.remove('tile-selected'), 300);\n            selected = null;\n        }\n    } else {\n        target.classList.add('tile-selected');\n        selected = { row, col };\n    }\n}\n"
+    },
+    {
+      "path": "main.js",
+      "content": "import { initGame } from './ui.js';\n\ndocument.addEventListener('DOMContentLoaded', () => {\n    const svg = document.getElementById('game-board');\n    const score = document.getElementById('score');\n    initGame(svg, score);\n});\n"
+    },
+    {
+      "path": "index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>连连看 Game</title>\n    <style>\n        body {\n            margin: 0;\n            background: url('static/bg.jpg') no-repeat center center fixed;\n            background-size: cover;\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            height: 100vh;\n        }\n        #score {\n            position: absolute;\n            top: 20px;\n            right: 20px;\n            font-size: 24px;\n            color: white;\n            text-shadow: 1px 1px 2px black;\n        }\n        .tile {\n            stroke: #333;\n            stroke-width: 1;\n        }\n        .tile-type-1 { fill: #f4a261; }\n        .tile-type-2 { fill: #2a9d8f; }\n        .tile-type-3 { fill: #e76f51; }\n        .tile-type-4 { fill: #e9c46a; }\n        .tile-selected { stroke: #ff006e; stroke-width: 3; }\n    </style>\n</head>\n<body>\n    <div id=\"score\">Score: 0</div>\n    <svg id=\"game-board\" width=\"600\" height=\"480\"></svg>\n    <script type=\"module\" src=\"main.js\"></script>\n</body>\n</html>\n"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w0",
+      "task": "User can run a script to generate a background image for the game",
+      "acceptance_criteria": [
+        "Running `python background_generator.py` outputs a file `static/bg.jpg` of at least 1024×768 pixels (or a valid placeholder).",
+        "The function `generate_background` uses the provided nano banana2 API (or a mock) and exits with code 0.",
+        "If the file already exists the script prints a message and does not overwrite."
+      ],
+      "files_owned": [
+        "background_generator.py"
+      ],
+      "files_readonly": [],
+      "is_integrator": false
+    },
+    {
+      "id": "w1",
+      "task": "Game logic: board generation and connectivity checking for tile matching",
+      "acceptance_criteria": [
+        "`new Board(10, 8, 4)` creates a board grid of 10 columns and 8 rows; each cell either holds a `Tile` with type 1-4 or is null after removal.",
+        "`PathFinder.findPath(board, start, end)` returns a valid path array (at most two bends) when two same-type tiles are present and reachable via a clear route; returns `null` otherwise.",
+        "`board.isCleared()` returns `true` only when no tiles remain."
+      ],
+      "files_owned": [
+        "game.js"
+      ],
+      "files_readonly": [],
+      "is_integrator": false
+    },
+    {
+      "id": "w2",
+      "task": "SVG board rendering with tile shapes and animation helpers",
+      "acceptance_criteria": [
+        "`createBoardSvg(board, svgElement)` draws each tile as a rectangle with `id=\"tile-{row}-{col}\"` and class `\"tile tile-type-{type}\"`; removed cells display empty space.",
+        "`animatePath(path, svgElement, callback)` draws a polyline through the path points, fades it in over 0.8 s, then removes it and calls `callback`.",
+        "`removeTile(row, col, svgElement, callback)` fades out the tile, then removes it from the DOM and calls `callback`.",
+        "`drawScore(score, containerElement)` updates `containerElement` text to show the current score."
+      ],
+      "files_owned": [
+        "renderer.js"
+      ],
+      "files_readonly": [],
+      "is_integrator": false
+    },
+    {
+      "id": "w3",
+      "task": "User interaction: click-to-select, connection animation, and score updates",
+      "acceptance_criteria": [
+        "After `initGame(svgElement, scoreElement)` the board is rendered and click events are active.",
+        "Clicking a tile highlights it with `tile-selected` class; clicking another same-type tile triggers path finding.",
+        "When a valid path exists, it is animated, both tiles are removed with animation, score increases by 10, and the board redraws; if invalid, the selection clears with a brief shake effect.",
+        "When the board is cleared, an alert or visible message congratulates the player.",
+        "`getBoard()` returns the current board instance."
+      ],
+      "files_owned": [
+        "ui.js"
+      ],
+      "files_readonly": [
+        "game.js",
+        "renderer.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w_integrator",
+      "task": "Integrator: wire modules together so the full game loads and is playable in a browser",
+      "acceptance_criteria": [
+        "Opening `index.html` (served via a local HTTP server) displays the background image, the game board SVG, and the score.",
+        "Clicking tiles triggers the full selection / match / removal loop exactly as defined by `ui.js`.",
+        "The score updates after each successful match.",
+        "When the board clears, the congratulatory message appears.",
+        "No console errors; all module imports resolve correctly."
+      ],
+      "files_owned": [
+        "index.html",
+        "main.js"
+      ],
+      "files_readonly": [
+        "game.js",
+        "renderer.js",
+        "ui.js",
+        "background_generator.py"
+      ],
+      "is_integrator": true
+    }
+  ]
+}

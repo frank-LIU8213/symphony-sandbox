@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>连连看 Game</title>
+    <style>
+        body {
+            margin: 0;
+            background: url('static/bg.jpg') no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+        }
+        .tile {
+            stroke: #333;
+            stroke-width: 1;
+        }
+        .tile-type-1 { fill: #f4a261; }
+        .tile-type-2 { fill: #2a9d8f; }
+        .tile-type-3 { fill: #e76f51; }
+        .tile-type-4 { fill: #e9c46a; }
+        .tile-selected { stroke: #ff006e; stroke-width: 3; }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <svg id="game-board" width="600" height="480"></svg>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
