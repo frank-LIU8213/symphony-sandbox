@@ -95,14 +95,18 @@ function handleClick(event, svgElement, scoreElement) {
 
         const path = PathFinder.findPath(board, selected, tile);
         if (path) {
-            // ---- Valid match ----
             const emitMatchData = { tile1: { ...tile1 }, tile2: { ...tile2 } };
 
+            const selRow = selected.row;
+            const selCol = selected.col;
+            const tRow = row;
+            const tCol = col;
+
             animatePath(path, svgElement, () => {
-                removeTile(selected.row, selected.col, svgElement, () => {
-                    board.remove(selected.row, selected.col);
-                    removeTile(row, col, svgElement, () => {
-                        board.remove(row, col);
+                removeTile(selRow, selCol, svgElement, () => {
+                    board.remove(selRow, selCol);
+                    removeTile(tRow, tCol, svgElement, () => {
+                        board.remove(tRow, tCol);
                         score += 10;
                         drawScore(score, scoreElement);
 

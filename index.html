@@ -104,17 +104,6 @@
             height: 480px;
         }
 
-        /* Container for particle effects, positioned over the board */
-        #particles-layer {
-            position: absolute;
-            bottom: -80px; /* placeholder – will be positioned by initParticles */
-            left: 0;
-            width: 600px;
-            height: 480px;
-            pointer-events: none;
-            z-index: 10;
-        }
-
         /* ——— Tile Styles ——— */
         .tile {
             stroke: var(--airbnb-gray);
@@ -216,8 +205,10 @@
             <h1 class="game-title">连<span>连</span>看</h1>
             <div id="score">Score: 0</div>
         </div>
-        <svg id="game-board" width="600" height="480"></svg>
-        <div id="particles-layer"></div>
+        <div class="board-area" style="position: relative; width: 600px; height: 480px;">
+            <svg id="game-board" width="600" height="480"></svg>
+            <div id="particles-layer" style="position: absolute; top: 0; left: 0; width: 600px; height: 480px; pointer-events: none; z-index: 10;"></div>
+        </div>
     </div>
 
     <script type="module" src="main.js"></script>
