@@ -6,10 +6,13 @@
 
 const CELL_SIZE = 60;
 
+const TILE_EMOJIS = ['🍎', '🍊', '🍇', '🍓'];
+
 /**
  * Create the SVG board representation.
  * Clears the SVG, adds `<defs>` for gradients and drop shadow,
- * then draws each tile as a rounded `<rect>` with a CSS class.
+ * then draws each tile as a rounded `<rect>` with a CSS class
+ * and an emoji label.
  */
 export function createBoardSvg(board, svgElement) {
     svgElement.innerHTML = '';
@@ -85,6 +88,19 @@ export function createBoardSvg(board, svgElement) {
                 rect.setAttribute('stroke', '#E3E1E1');
                 rect.setAttribute('stroke-width', '1');
                 svgElement.appendChild(rect);
+
+                // Emoji label for richer visual
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', x + CELL_SIZE / 2);
+                text.setAttribute('y', y + CELL_SIZE / 2);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'central');
+                text.setAttribute('font-size', '28');
+                text.setAttribute('fill', 'white');
+                text.setAttribute('font-family', 'Arial, sans-serif');
+                text.setAttribute('pointer-events', 'none');
+                text.textContent = TILE_EMOJIS[tile.type - 1] || '?';
+                svgElement.appendChild(text);
             }
         }
     }
