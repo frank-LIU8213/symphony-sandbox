@@ -115,7 +115,7 @@ class Game:
 
         renderer = Renderer(self.stdscr)
         self.renderer = renderer
-        input_handler = InputHandler(self.stdscr, self.state)
+        input_handler = InputHandler(self.stdscr)
         self.input_handler = input_handler
 
         curses.curs_set(0)

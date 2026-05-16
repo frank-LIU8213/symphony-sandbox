@@ -1,8 +1,16 @@
 """Effect handlers."""
 import curses
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
-from .models import Drawable, EffectHandler, GameState
+from .models import Drawable, EffectHandler
+
+# Per .symphony-contract.md, GameState is defined in snake/game.py
+# (NOT models.py). game.py imports this module, so a runtime
+# `from .game import GameState` would be circular. GameState is only
+# used here in type annotations, so import it under TYPE_CHECKING and
+# use string forward-refs.
+if TYPE_CHECKING:
+    from .game import GameState
 
 
 # ---------------------------------------------------------------------------
@@ -12,7 +20,7 @@ from .models import Drawable, EffectHandler, GameState
 class EffectIndicator:
     """A small indicator drawn near the board corner while an effect is active."""
 
-    def __init__(self, state: GameState, symbol: str, color_pair: int) -> None:
+    def __init__(self, state: "GameState", symbol: str, color_pair: int) -> None:
         # Position relative to the board's top‑left corner.
         self._rel_x = state.board_w - 2
         self._rel_y = 1
@@ -45,7 +53,7 @@ class GeneralEffectHandler:
         "double_score": ("M", 7),
     }
 
-    def apply(self, state: GameState, effect_type: str) -> None:
+    def apply(self, state: "GameState", effect_type: str) -> None:
         """Immediate effect when the bean is eaten."""
         if effect_type == "shrink":
             # Remove the last two segments of the snake if possible.
@@ -55,7 +63,7 @@ class GeneralEffectHandler:
         # integration loop; no immediate state change needed here.
 
     def get_drawable(
-        self, state: GameState, effect_type: str
+        self, state: "GameState", effect_type: str
     ) -> Optional[Drawable]:
         """Return a drawable that will be shown while the effect is active."""
         entry = self._EFFECT_DRAW.get(effect_type)
