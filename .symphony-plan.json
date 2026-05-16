@@ -1,0 +1,124 @@
+{
+  "contract": "## Shared Types\n\n- **Direction** (enum): `UP`, `DOWN`, `LEFT`, `RIGHT`.\n- **BeanType** (dataclass):\n  - `name: str`\n  - `symbol: str` – single character to render\n  - `color: int` – curses color pair ID\n  - `effect: Optional[str]` – effect identifier if any, else `None`\n  - `probability: float` – relative spawn weight (≥0)\n- **Bean** (dataclass): `x: int`, `y: int`, `type: BeanType`.\n- **Drawable** (Protocol):\n  - method `draw(window: curses.window, board_x: int, board_y: int) -> None` – called by the renderer to draw extra items (e.g. effect indicators). `board_x/board_y` are the top‑left corner of the playable area on the curses window.\n- **EffectHandler** (Protocol):\n  - `apply(state: GameState, effect_type: str) -> None` – mutate `state` as needed (change speed, invert controls, apply shield flag, etc.).\n  - `get_drawable(state: GameState, effect_type: str) -> Optional[Drawable]` – return a drawable that will be added to `state.drawables` while the effect is active, or `None`.\n- **GameState** (class, defined in `snake/game.py`):\n  - Attributes:\n    - `snake: List[Tuple[int, int]]` – list of (x,y) from head to tail.\n    - `direction: Direction`\n    - `beans: List[Bean]`\n    - `score: int`\n    - `game_over: bool`\n    - `tick_interval: int` – game speed in milliseconds (lower = faster)\n    - `drawables: List[Drawable]` – extra drawables that the renderer draws on top\n    - `effects_handlers: List[EffectHandler]` – registered handlers from `snake.effects`\n    - `active_effects: List[Tuple[str, int]]` – `(effect_type, remaining_ticks)`; effects are processed each tick\n    - board width/height attributes provided by the integrator (e.g. `board_w: int`, `board_h: int`)\n  - Methods:\n    - `add_drawable(d: Drawable) -> None`\n    - `remove_drawable(d: Drawable) -> None`\n    - `add_effect(effect_type: str, duration_ticks: int) -> None` – add or refresh an effect.\n    - `tick_effects() -> None` – decrement durations, remove expired ones and remove their drawable (using `remove_drawable`).\n    - `apply_effect(effect_type: str) -> None` – call the first `EffectHandler` whose `apply` matches the type.\n\n## API Contract\n\n### Module: `snake.beans`\n- **`init_beans() -> List[BeanType]`**  \n  Returns all bean types available for spawning (including the normal bean and any special ones). The integrator merges this list and uses the `probability` field to weight random bean placement.\n\n### Module: `snake.effects`\n- **`init_effects() -> List[EffectHandler]`**  \n  Returns all effect handler instances. The integrator calls this once at startup and stores the result in `state.effects_handlers`.\n\n### Module: `snake.menu`\n- **`title_screen(stdscr: curses.window) -> Optional[str]`**  \n  Shows the start screen. Returns `\"start\"` to begin the game, `\"highscores\"` to view high scores, or `None` to exit.\n- **`game_over_screen(stdscr: curses.window, score: int) -> bool`**  \n  Shows the game over screen with the final score. Returns `True` if the player chooses to replay, `False` to quit.\n\n### Module: `snake.highscore`\n- **`save_high_score(name: str, score: int) -> None`**  \n  Persists a new score entry (implementations may prompt for name inside the function or take it as argument – the integrator will provide it).\n- **`get_high_scores() -> List[Tuple[str, int]]`**  \n  Returns the sorted high‑score list (highest first).\n\n### Integration Flow (owned by integrator)\n1. Initialize curses and call `menu.title_screen`. If `\"start\"`, proceed.\n2. Create a `GameState`, populate `effects_handlers = init_effects()` and spawn initial beans using `init_beans()`.\n3. Enter the main loop:\n   - Read input via `InputHandler.get_direction`.\n   - Move the snake; check wall‑collision and self‑collision → `game_over = True`.\n   - Check if the snake head coincides with a bean → apply score increase, grow snake for normal beans; for special beans call `state.apply_effect(effect_type)` and immediately `state.add_effect(effect_type, duration)`.\n   - Call `state.tick_effects()` each tick.\n   - Spawn new beans periodically (using weighted random from the bean types list).\n   - Render via `Renderer.draw(state)`.\n   - Sleep for `state.tick_interval` milliseconds.\n4. When `state.game_over`, call `menu.game_over_screen`; if replay, re‑initialise the state and restart the loop.\n\n## Naming Conventions\n- **Modules**: lowercase with underscores (`game`, `beans`, `effects`, `input_handler`, `renderer`, `menu`, `highscore`).\n- **Classes**: PascalCase (`Game`, `GameState`, `Bean`, `BeanType`, `Drawable`, `EffectHandler`, `InputHandler`, `Renderer`).\n- **Functions & methods**: lowercase with underscores.\n- **Private helpers**: prefix with single underscore.\n- **Constants**: UPPER_CASE.",
+  "scaffold_files": [
+    {
+      "path": "snake/__init__.py",
+      "content": "\"\"\"Snake game package.\"\"\"\n"
+    },
+    {
+      "path": "snake/models.py",
+      "content": "\"\"\"Shared types for the snake game.\"\"\"\nfrom dataclasses import dataclass\nfrom enum import Enum, auto\nfrom typing import List, Optional, Tuple, Protocol\nimport curses\n\n\nclass Direction(Enum):\n    UP = auto()\n    DOWN = auto()\n    LEFT = auto()\n    RIGHT = auto()\n\n\n@dataclass\nclass BeanType:\n    name: str\n    symbol: str\n    color: int  # curses color pair number\n    effect: Optional[str] = None\n    probability: float = 1.0\n\n\n@dataclass\nclass Bean:\n    x: int\n    y: int\n    type: BeanType\n\n\nclass Drawable(Protocol):\n    def draw(self, window: curses.window, board_x: int, board_y: int) -> None:\n        ...\n\n\nclass EffectHandler(Protocol):\n    def apply(self, state: \"GameState\", effect_type: str) -> None:\n        ...\n\n    def get_drawable(self, state: \"GameState\", effect_type: str) -> Optional[Drawable]:\n        ...\n"
+    },
+    {
+      "path": "snake/game.py",
+      "content": "\"\"\"Core game logic and state.\"\"\"\nimport curses\nfrom typing import List, Tuple, Optional\nfrom .models import Direction, Bean, Drawable, EffectHandler\n\n\nclass GameState:\n    def __init__(self):\n        self.snake: List[Tuple[int, int]] = [(10, 10)]\n        self.direction: Direction = Direction.RIGHT\n        self.beans: List[Bean] = []\n        self.score: int = 0\n        self.game_over: bool = False\n        self.tick_interval: int = 200  # ms\n        self.drawables: List[Drawable] = []\n        self.effects_handlers: List[EffectHandler] = []\n        self.active_effects: List[Tuple[str, int]] = []  # (effect_type, remaining_ticks)\n        self.board_w: int = 40\n        self.board_h: int = 20\n\n    def add_drawable(self, d: Drawable) -> None:\n        self.drawables.append(d)\n\n    def remove_drawable(self, d: Drawable) -> None:\n        if d in self.drawables:\n            self.drawables.remove(d)\n\n    def add_effect(self, effect_type: str, duration_ticks: int) -> None:\n        # Add or refresh the effect; logic will be implemented by integrator\n        raise NotImplementedError\n\n    def tick_effects(self) -> None:\n        # Decrement durations, remove expired effects and their drawables\n        raise NotImplementedError\n\n    def apply_effect(self, effect_type: str) -> None:\n        # Find the appropriate handler and invoke apply()\n        raise NotImplementedError\n\n\nclass Game:\n    def __init__(self, stdscr: curses.window):\n        self.stdscr = stdscr\n        self.state = GameState()\n        from .renderer import Renderer\n        from .input_handler import InputHandler\n        self.renderer = Renderer()\n        self.input_handler = InputHandler(stdscr)\n\n    def run(self) -> None:\n        \"\"\"Main game loop. To be implemented by integrator.\"\"\"\n        raise NotImplementedError\n"
+    },
+    {
+      "path": "snake/renderer.py",
+      "content": "\"\"\"Rendering utilities for the snake game.\"\"\"\nimport curses\nfrom .models import Drawable\nfrom .game import GameState\n\n\nclass Renderer:\n    def draw(self, state: GameState) -> None:\n        \"\"\"Draw the board, snake, beans, score, and extra drawables.\"\"\"\n        raise NotImplementedError\n"
+    },
+    {
+      "path": "snake/input_handler.py",
+      "content": "\"\"\"Input handling for the snake game.\"\"\"\nimport curses\nfrom .models import Direction\n\n\nclass InputHandler:\n    def __init__(self, window: curses.window):\n        self.window = window\n\n    def get_direction(self, current_dir: Direction) -> Direction:\n        \"\"\"Non-blocking read; return new direction if a valid key is pressed, else current.\"\"\"\n        raise NotImplementedError\n"
+    },
+    {
+      "path": "snake/beans.py",
+      "content": "\"\"\"Bean types and spawner.\"\"\"\nfrom typing import List\nfrom .models import BeanType\n\n\ndef init_beans() -> List[BeanType]:\n    \"\"\"Return all available bean types with probabilities.\"\"\"\n    return []\n"
+    },
+    {
+      "path": "snake/effects.py",
+      "content": "\"\"\"Effect handlers.\"\"\"\nfrom typing import List\nfrom .models import EffectHandler\n\n\ndef init_effects() -> List[EffectHandler]:\n    \"\"\"Return all effect handlers.\"\"\"\n    return []\n"
+    },
+    {
+      "path": "snake/menu.py",
+      "content": "\"\"\"Title screen and game over screen.\"\"\"\nfrom typing import Optional\nimport curses\n\n\ndef title_screen(stdscr: curses.window) -> Optional[str]:\n    \"\"\"Show title screen, return 'start' to play, 'highscores' to view, or None to quit.\"\"\"\n    raise NotImplementedError\n\n\ndef game_over_screen(stdscr: curses.window, score: int) -> bool:\n    \"\"\"Show game over screen with score, return True to play again.\"\"\"\n    raise NotImplementedError\n"
+    },
+    {
+      "path": "snake/highscore.py",
+      "content": "\"\"\"High score persistence.\"\"\"\nfrom typing import List, Tuple\n\n\ndef save_high_score(name: str, score: int) -> None:\n    \"\"\"Append score to persistent storage.\"\"\"\n    raise NotImplementedError\n\n\ndef get_high_scores() -> List[Tuple[str, int]]:\n    \"\"\"Return sorted list of (name, score).\"\"\"\n    raise NotImplementedError\n"
+    },
+    {
+      "path": "snake_game.py",
+      "content": "\"\"\"Entry point for the snake game.\"\"\"\n\n\ndef main():\n    \"\"\"Initialize curses and start the game.\"\"\"\n    raise NotImplementedError\n\n\nif __name__ == \"__main__\":\n    main()\n"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w_integrator",
+      "task": "Core game engine and integration: implement snake movement, input handling, rendering, scoring, game‑over detection, and integration of special beans, effects, and UI extras. Deliver a fully playable game that uses the special beans and effects provided by w_beans_effects and the screens from w_ui_extras.",
+      "acceptance_criteria": [
+        "Game starts with a title screen (via `menu.title_screen`).",
+        "After choosing 'start', a bordered play area, snake, and beans are drawn.",
+        "Snake moves continuously in the current direction; arrow keys change direction (reversal is blocked).",
+        "Eating a normal bean (no effect) increases length by 1 and score by 10, and a new bean spawns.",
+        "Collision with wall or snake body sets `game_over = True` and triggers the game‑over screen.",
+        "Special beans from `init_beans()` appear according to their probabilities and display their correct symbol/color.",
+        "When a special bean is eaten, its effect is applied (via `state.apply_effect`) and a timed effect is added; the effect visually indicates its presence using the drawable returned by the handler.",
+        "Effect durations are properly decremented each tick; expired effects are removed and their drawable disappears.",
+        "Template functions from `w_beans_effects` (`init_beans`, `init_effects`) and `w_ui_extras` (`title_screen`, `game_over_screen`, high score functions) are called and their return values honoured.",
+        "After game over, selecting 'replay' restarts the game with a fresh state; choosing 'quit' exits cleanly."
+      ],
+      "files_owned": [
+        "snake_game.py",
+        "snake/game.py",
+        "snake/renderer.py",
+        "snake/input_handler.py"
+      ],
+      "files_readonly": [
+        "snake/__init__.py",
+        "snake/models.py",
+        "snake/beans.py",
+        "snake/effects.py",
+        "snake/menu.py",
+        "snake/highscore.py"
+      ],
+      "is_integrator": true
+    },
+    {
+      "id": "w_beans_effects",
+      "task": "Implement special beans and their effects: speed up, slow down, invert controls, shield, shrink, score multiplier, or other creative abilities. Every bean type appears with a distinct symbol and color, and its effect is visually indicated while active.",
+      "acceptance_criteria": [
+        "`init_beans()` returns at least 3 special bean types plus the normal bean, each with a unique symbol and color and a non‑zero probability.",
+        "Each special bean's `effect` field is a string that maps to a handler in `init_effects()`.",
+        "`init_effects()` returns a list of `EffectHandler` instances – one per effect type.",
+        "Handlers correctly mutate `GameState` (e.g., changing `tick_interval`, setting a flag for inverted controls, skipping collision damage while shielded, reducing snake length on shrink, multiplying score).",
+        "`get_drawable` returns a `Drawable` that shows a status icon/text (e.g., a flashing border, a timer icon) for the duration of the effect.",
+        "Drawables are properly cleaned up when an effect expires (via `state.remove_drawable` in `tick_effects`).",
+        "Multiple effects can be active concurrently without interfering with each other."
+      ],
+      "files_owned": [
+        "snake/beans.py",
+        "snake/effects.py"
+      ],
+      "files_readonly": [
+        "snake/__init__.py",
+        "snake/models.py",
+        "snake/game.py"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w_ui_extras",
+      "task": "User interface extras: title screen with instructions, game‑over screen with final score and replay prompt, and persistent high score storage.",
+      "acceptance_criteria": [
+        "`title_screen(stdscr)` displays the game title, controls summary, and a prompt to start or view high scores; it returns 'start' or 'highscores' or None (quit).",
+        "If 'highscores' is chosen, the screen shows the list returned by `get_high_scores()` and then returns to the title.",
+        "`game_over_screen(stdscr, score)` shows the final score and high scores, then asks whether to replay (returns True) or quit (returns False).",
+        "`save_high_score(name, score)` writes a new entry to a persistent file (e.g. JSON).",
+        "`get_high_scores()` returns the list sorted by score descending (top N or all).",
+        "High‑score file is created if it does not exist, and scores are appended without losing previous entries.",
+        "The screens use curses cleanly: they clear the window, draw centred text, and wait for a valid key."
+      ],
+      "files_owned": [
+        "snake/menu.py",
+        "snake/highscore.py"
+      ],
+      "files_readonly": [
+        "snake/__init__.py",
+        "snake/models.py",
+        "snake/game.py"
+      ],
+      "is_integrator": false
+    }
+  ]
+}
