@@ -1,0 +1,157 @@
+{
+  "contract": "## Shared Types\n\n- **AudioConfig**: `{ volume: number, enabled: boolean }` - Global audio state shared across modules.\n- **AnimationState**: `{ playing: boolean, step: number }` - Per-module animation state tracking.\n- **QuizResult**: `{ score: number, total: number, feedback: string }` - Quiz outcome shape.\n- **SoundEffect**: Enum `[ 'fusion_start', 'fusion_complete', 'fission_start', 'fission_complete', 'correct', 'wrong' ]` - Standardized effect keys.\n- **AppConfig**: `{ audio: AudioEngine }` - Configuration object passed to module `init()`.\n\n## API Contract\n\n- **GET /**: Serves `templates/index.html`. No parameters.\n- **POST /api/quiz/submit**: Body `{ questionId: string, answer: string }`. Returns `{ success: boolean, result: QuizResult }`.\n- **Module Interface**: Each JS module exports a class with `init(config: AppConfig): void` and public interaction methods (e.g., `triggerFusion()`).\n- **Audio Interface**: `AudioEngine` exposes `play(effect: SoundEffect): void` and `setVolume(vol: number): void`. Modules receive an instance via constructor injection.\n- **DOM Contract**: `index.html` must contain `#fusion-section`, `#fission-section`, `#quiz-section`, and `#app-header` with exact IDs matching JS selectors.\n\n## Naming Conventions\n\n- **Python**: `snake_case` for functions/variables, `PascalCase` for classes, `UPPER_SNAKE_CASE` for constants.\n- **JavaScript**: `camelCase` for functions/variables, `PascalCase` for classes, `UPPER_SNAKE_CASE` for constants.\n- **CSS**: `kebab-case` for classes/variables, `--` prefix for custom properties (e.g., `--color-primary`).\n- **HTML**: `kebab-case` for attributes, `id` attributes must match JS selectors exactly.\n- **SVG**: Inline SVGs use `viewBox=\"0 0 100 100\"`. External assets use descriptive names like `fusion-core.svg`.",
+  "scaffold_files": [
+    {
+      "path": "app.py",
+      "content": "from flask import Flask, render_template, request, jsonify\n\napp = Flask(__name__)\n\n@app.route('/')\ndef index():\n    return render_template('index.html')\n\n@app.route('/api/quiz/submit', methods=['POST'])\ndef submit_quiz():\n    data = request.json\n    # Placeholder logic\n    return jsonify({\"success\": True, \"result\": {\"score\": 0, \"total\": 1, \"feedback\": \"Pending\"}})\n\nif __name__ == '__main__':\n    app.run(debug=True)"
+    },
+    {
+      "path": "templates/index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Nuclear Science Interactive</title>\n    <link rel=\"stylesheet\" href=\"/static/css/style.css\">\n</head>\n<body>\n    <header id=\"app-header\">\n        <h1>Nuclear Physics Explorer</h1>\n        <nav id=\"main-nav\">\n            <a href=\"#fusion\">Fusion</a>\n            <a href=\"#fission\">Fission</a>\n            <a href=\"#quiz\">Quiz</a>\n        </nav>\n    </header>\n    <main id=\"app-main\">\n        <section id=\"fusion-section\"></section>\n        <section id=\"fission-section\"></section>\n        <section id=\"quiz-section\"></section>\n    </main>\n    <script src=\"/static/js/audio.js\"></script>\n    <script src=\"/static/js/fusion.js\"></script>\n    <script src=\"/static/js/fission.js\"></script>\n    <script src=\"/static/js/quiz.js\"></script>\n    <script src=\"/static/js/main.js\"></script>\n</body>\n</html>"
+    },
+    {
+      "path": "static/css/style.css",
+      "content": ":root {\n    --color-bg: #0a0e17;\n    --color-primary: #00f0ff;\n    --color-secondary: #7000ff;\n    --color-text: #e0e6ed;\n    --font-main: 'Segoe UI', sans-serif;\n    --spacing-unit: 1rem;\n}\n\nbody {\n    background-color: var(--color-bg);\n    color: var(--color-text);\n    font-family: var(--font-main);\n    margin: 0;\n    padding: 0;\n}\n\n#app-header {\n    padding: calc(var(--spacing-unit) * 2);\n    text-align: center;\n}\n\n#main-nav a {\n    color: var(--color-primary);\n    margin: 0 var(--spacing-unit);\n    text-decoration: none;\n}\n\nsection {\n    min-height: 80vh;\n    padding: var(--spacing-unit);\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n}"
+    },
+    {
+      "path": "static/js/audio.js",
+      "content": "/**\n * AudioEngine handles all sound effects and background audio.\n */\nclass AudioEngine {\n    constructor() {\n        this.volume = 0.5;\n        this.enabled = true;\n        this.sounds = {};\n    }\n\n    /**\n     * Plays a specific sound effect.\n     * @param {string} name - The sound key.\n     */\n    play(name) {\n        if (!this.enabled) return;\n        console.log(`Playing sound: ${name}`);\n    }\n\n    /**\n     * Sets the master volume.\n     * @param {number} vol - 0.0 to 1.0.\n     */\n    setVolume(vol) {\n        this.volume = Math.max(0, Math.min(1, vol));\n    }\n\n    /**\n     * Initializes audio context and loads assets.\n     */\n    init() {\n        console.log('AudioEngine initialized');\n    }\n}\n\nwindow.AudioEngine = AudioEngine;"
+    },
+    {
+      "path": "static/js/fusion.js",
+      "content": "/**\n * FusionVisuals manages the fusion section SVG and animations.\n */\nclass FusionVisuals {\n    constructor(audioEngine) {\n        this.audio = audioEngine;\n        this.container = document.getElementById('fusion-section');\n    }\n\n    /**\n     * Renders the SVG and binds interactions.\n     */\n    init() {\n        this.container.innerHTML = '<svg id=\"fusion-svg\" viewBox=\"0 0 100 100\"></svg>';\n        this.audio.play('fusion_start');\n        console.log('FusionVisuals initialized');\n    }\n\n    /**\n     * Triggers the fusion animation sequence.\n     */\n    triggerFusion() {\n        this.audio.play('fusion_complete');\n        console.log('Fusion animation triggered');\n    }\n}\n\nwindow.FusionVisuals = FusionVisuals;"
+    },
+    {
+      "path": "static/js/fission.js",
+      "content": "/**\n * FissionVisuals manages the fission section SVG and animations.\n */\nclass FissionVisuals {\n    constructor(audioEngine) {\n        this.audio = audioEngine;\n        this.container = document.getElementById('fission-section');\n    }\n\n    /**\n     * Renders the SVG and binds interactions.\n     */\n    init() {\n        this.container.innerHTML = '<svg id=\"fission-svg\" viewBox=\"0 0 100 100\"></svg>';\n        this.audio.play('fission_start');\n        console.log('FissionVisuals initialized');\n    }\n\n    /**\n     * Triggers the fission animation sequence.\n     */\n    triggerFission() {\n        this.audio.play('fission_complete');\n        console.log('Fission animation triggered');\n    }\n}\n\nwindow.FissionVisuals = FissionVisuals;"
+    },
+    {
+      "path": "static/js/quiz.js",
+      "content": "/**\n * QuizManager handles the interactive quiz logic.\n */\nclass QuizManager {\n    constructor(audioEngine) {\n        this.audio = audioEngine;\n        this.container = document.getElementById('quiz-section');\n        this.score = 0;\n    }\n\n    /**\n     * Renders the quiz UI and loads questions.\n     */\n    init() {\n        this.container.innerHTML = '<div id=\"quiz-ui\"><h2>Test Your Knowledge</h2><button id=\"start-quiz\">Start</button></div>';\n        document.getElementById('start-quiz').addEventListener('click', () => this.start());\n        console.log('QuizManager initialized');\n    }\n\n    /**\n     * Starts the quiz session.\n     */\n    start() {\n        this.audio.play('fusion_start');\n        console.log('Quiz started');\n    }\n\n    /**\n     * Submits an answer.\n     */\n    submitAnswer(questionId, answer) {\n        console.log(`Submitted ${answer} for ${questionId}`);\n    }\n}\n\nwindow.QuizManager = QuizManager;"
+    },
+    {
+      "path": "static/js/main.js",
+      "content": "document.addEventListener('DOMContentLoaded', () => {\n    const audio = new AudioEngine();\n    audio.init();\n    const fusion = new FusionVisuals(audio);\n    fusion.init();\n    const fission = new FissionVisuals(audio);\n    fission.init();\n    const quiz = new QuizManager(audio);\n    quiz.init();\n});"
+    },
+    {
+      "path": "requirements.txt",
+      "content": "flask"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w0",
+      "task": "User can see a responsive, themed layout with navigation and section placeholders.",
+      "acceptance_criteria": [
+        "CSS variables defined for colors, fonts, and spacing.",
+        "Header and nav render correctly with hover effects.",
+        "Sections stack vertically on mobile and align on desktop.",
+        "No console errors on initial load."
+      ],
+      "files_owned": [
+        "static/css/style.css"
+      ],
+      "files_readonly": [
+        "templates/index.html",
+        "static/js/*.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w1",
+      "task": "User can view and interact with the Nuclear Fusion SVG animation.",
+      "acceptance_criteria": [
+        "SVG renders inside #fusion-section.",
+        "Clicking the SVG triggers a fusion animation sequence.",
+        "Audio plays 'fusion_start' on init and 'fusion_complete' on interaction.",
+        "Animation uses CSS keyframes or JS requestAnimationFrame."
+      ],
+      "files_owned": [
+        "static/js/fusion.js"
+      ],
+      "files_readonly": [
+        "static/css/style.css",
+        "static/js/audio.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w2",
+      "task": "User can view and interact with the Nuclear Fission SVG animation.",
+      "acceptance_criteria": [
+        "SVG renders inside #fission-section.",
+        "Clicking the SVG triggers a fission animation sequence.",
+        "Audio plays 'fission_start' on init and 'fission_complete' on interaction.",
+        "Visuals clearly distinguish fission from fusion (e.g., splitting vs merging)."
+      ],
+      "files_owned": [
+        "static/js/fission.js"
+      ],
+      "files_readonly": [
+        "static/css/style.css",
+        "static/js/audio.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w3",
+      "task": "User can control audio volume and hear effects during interactions.",
+      "acceptance_criteria": [
+        "AudioEngine singleton accessible globally.",
+        "Volume slider updates master volume in real-time.",
+        "Mute toggle works correctly.",
+        "Sounds load and play without blocking the main thread."
+      ],
+      "files_owned": [
+        "static/js/audio.js"
+      ],
+      "files_readonly": [
+        "static/css/style.css"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w4",
+      "task": "User can take a quiz and receive instant feedback on answers.",
+      "acceptance_criteria": [
+        "Quiz UI renders with questions and options.",
+        "Submitting an answer calls POST /api/quiz/submit.",
+        "Correct/incorrect feedback displays immediately.",
+        "Score updates and final result screen shows."
+      ],
+      "files_owned": [
+        "static/js/quiz.js"
+      ],
+      "files_readonly": [
+        "static/css/style.css",
+        "static/js/audio.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w_integrator",
+      "task": "Integrator wires all modules into the Flask app and HTML entry point.",
+      "acceptance_criteria": [
+        "Flask app serves index.html at / and handles quiz API.",
+        "index.html imports all JS modules in correct order.",
+        "main.js instantiates AudioEngine, passes it to Fusion/Fission/Quiz.",
+        "DOMContentLoaded triggers init() on all modules.",
+        "Site runs without errors and all features are accessible."
+      ],
+      "files_owned": [
+        "app.py",
+        "templates/index.html",
+        "static/js/main.js",
+        "requirements.txt"
+      ],
+      "files_readonly": [
+        "static/css/style.css",
+        "static/js/fusion.js",
+        "static/js/fission.js",
+        "static/js/audio.js",
+        "static/js/quiz.js"
+      ],
+      "is_integrator": true
+    }
+  ]
+}
