@@ -138,7 +138,8 @@ export function createOverviewSection() {
       svg.addEventListener('click', _clickHandler);
 
       // Play ambient sound
-      audio.play('mars_ambient', true);
+      // TODO runner: audio file missing - commented out to clear 404
+      // audio.play('mars_ambient', true);
 
       // Content cards
       const facts = [

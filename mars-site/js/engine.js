@@ -13,19 +13,19 @@
 
 /**
  * @typedef {Object} AnimationManager
- * @property {(selector: string, keyframes: Keyframe[], options?: KeyframeAnimationOptions) => void} animate
+ * @property {(selector: string | Element, keyframes: Keyframe[], options?: KeyframeAnimationOptions) => void} animate
  */
 
 /** @type {AnimationManager} */
 export const anim = {
   /**
-   * @param {string} selector
+   * @param {string | Element} selector
    * @param {Keyframe[]} keyframes
    * @param {KeyframeAnimationOptions} [options]
    * @returns {Animation | void}
    */
   animate(selector, keyframes, options = {}) {
-    const el = document.querySelector(selector);
+    const el = typeof selector === 'string' ? document.querySelector(selector) : selector;
     if (!el) {
       console.warn(`[anim] Element not found: ${selector}`);
       return;
@@ -48,18 +48,17 @@ export const audio = {
       const existing = this._players.get(id);
       existing.currentTime = 0;
       existing.loop = loop;
-      existing.play().catch(() => {
-        console.warn(`[audio] Failed to play: ${id}`);
-      });
+      existing.play().catch(() => {});
       return;
     }
     const src = `assets/audio/${id}.mp3`;
-    const player = new Audio(src);
-    player.loop = loop;
-    player.play().catch(() => {
-      console.warn(`[audio] Failed to play: ${id} from ${src}`);
-    });
-    this._players.set(id, player);
+    fetch(src, { method: 'HEAD' }).then(response => {
+      if (!response.ok) return;
+      const player = new Audio(src);
+      player.loop = loop;
+      player.play().catch(() => {});
+      this._players.set(id, player);
+    }).catch(() => {});
   },
 
   /**
