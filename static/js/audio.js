@@ -16,7 +16,7 @@ class AudioEngine {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         }
         if (this.ctx.state === 'suspended') {
-            this.ctx.resume();
+            this.ctx.resume().catch(() => {});
         }
     }
 
@@ -25,7 +25,15 @@ class AudioEngine {
      * @param {string} name - The sound key from SoundEffect enum.
      */
     play(name) {
-        if (!this.enabled || !this.ctx) return;
+        if (!this.enabled) return;
+        
+        if (!this.ctx) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+        }
+        if (this.ctx.state === 'suspended') return;
         
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();

@@ -2,8 +2,8 @@
  * FissionVisuals manages the fission section SVG and animations.
  */
 class FissionVisuals {
-    constructor() {
-        this.audio = null;
+    constructor(audioEngine) {
+        this.audio = audioEngine;
         this.container = document.getElementById('fission-section');
         this.isAnimating = false;
     }
@@ -13,7 +13,7 @@ class FissionVisuals {
      * @param {AppConfig} config - Configuration object containing audio engine.
      */
     init(config) {
-        this.audio = config?.audio || config;
+        this.audio = config?.audio || this.audio;
         
         this.container.innerHTML = `
             <style>
@@ -166,9 +166,6 @@ class FissionVisuals {
         const newSvg = svg.cloneNode(true);
         svg.parentNode.replaceChild(newSvg, svg);
         
-        // Re-bind click event
-        this.container.addEventListener('click', () => this.triggerFission());
-
         // Reset flag after animation completes (~2.5s)
         setTimeout(() => {
             this.isAnimating = false;

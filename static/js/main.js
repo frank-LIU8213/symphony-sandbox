@@ -21,6 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Mute Toggle
+    const muteToggle = document.getElementById('mute-toggle');
+    if (muteToggle) {
+        muteToggle.addEventListener('click', () => {
+            audio.toggle(!audio.enabled);
+            muteToggle.textContent = audio.enabled ? 'Mute' : 'Unmute';
+        });
+    }
+
     // Override QuizManager to load questions and submit to API
     QuizManager.prototype.start = function() {
         this.audio.play('fusion_start');
