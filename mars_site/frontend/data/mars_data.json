@@ -1,0 +1,16 @@
+[
+  {
+    "id": "overview",
+    "title": "Mars Overview",
+    "description": "The Red Planet",
+    "image_url": "/assets/img/mars_overview.jpg",
+    "facts": ["4th planet from the Sun", "Day length: 24h 37m", "Gravity: 38% of Earth"]
+  },
+  {
+    "id": "surface",
+    "title": "Surface Features",
+    "description": "Canyons, Volcanoes, and Dust Storms",
+    "image_url": "/assets/img/mars_surface.jpg",
+    "facts": ["Olympus Mons is the tallest volcano", "Valles Marineris is huge", "Dust storms can cover the planet"]
+  }
+]

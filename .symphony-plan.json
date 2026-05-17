@@ -1,0 +1,187 @@
+{
+  "contract": "## Shared Types\n- `MarsFact`: `{ id: string, title: string, description: string, image_url: string, facts: string[] }`\n- `SoundTrigger`: `{ id: string, url: string, event: 'hover' | 'click' | 'scroll' | 'load' }`\n- API Response envelope: `{ status: 'ok' | 'error', data?: MarsFact[] | SoundTrigger[], message?: string }`\n- Animation Config: `{ selector: string, type: 'rotate' | 'pulse' | 'path', duration: number, easing: string }`\n\n## API Contract\n- `GET /api/mars/data` -> Returns `MarsFact[]`\n- `GET /api/mars/sounds` -> Returns `SoundTrigger[]`\n- `GET /` -> Serves `index.html`\n- All API routes return JSON with `Content-Type: application/json`\n- Error handling returns 4xx/5xx with `{ status: 'error', message: string }`\n\n## Naming Conventions\n- Python: `snake_case` for functions/vars, `PascalCase` for classes, module names lowercase\n- JS: `camelCase` for functions/vars, `PascalCase` for classes/constructors, `SCREAMING_SNAKE` for constants\n- CSS: `kebab-case` for class names, BEM structure (`block__element--modifier`)\n- HTML: semantic elements, `data-*` attributes for JS hooks, lowercase tags\n- Assets: `kebab-case` for filenames, organized by type (`/assets/svg/`, `/assets/audio/`)",
+  "scaffold_files": [
+    {
+      "path": "mars_site/backend/main.py",
+      "content": "\"\"\"FastAPI application entry point.\"\"\"\nfrom fastapi import FastAPI\nfrom fastapi.staticfiles import StaticFiles\nfrom fastapi.responses import FileResponse\nfrom pathlib import Path\n\napp = FastAPI(title=\"Mars Interactive Site\")\n\nFRONTEND_DIR = Path(__file__).parent.parent / \"frontend\"\n\n@app.get(\"/\")\nasync def serve_index():\n    return FileResponse(FRONTEND_DIR / \"index.html\")\n\n@app.get(\"/health\")\nasync def health_check():\n    return {\"status\": \"ok\"}\n"
+    },
+    {
+      "path": "mars_site/backend/models.py",
+      "content": "\"\"\"Pydantic models for API data validation.\"\"\"\nfrom pydantic import BaseModel\nfrom typing import List, Literal\n\nclass MarsFact(BaseModel):\n    id: str\n    title: str\n    description: str\n    image_url: str\n    facts: List[str]\n\nclass SoundTrigger(BaseModel):\n    id: str\n    url: str\n    event: Literal[\"hover\", \"click\", \"scroll\", \"load\"]\n\nclass ApiResponse(BaseModel):\n    status: Literal[\"ok\", \"error\"]\n    data: List[MarsFact] | List[SoundTrigger] | None = None\n    message: str | None = None\n"
+    },
+    {
+      "path": "mars_site/backend/routes.py",
+      "content": "\"\"\"API route handlers.\"\"\"\nfrom fastapi import APIRouter\nfrom .models import MarsFact, SoundTrigger, ApiResponse\nfrom typing import List\n\nrouter = APIRouter(prefix=\"/api/mars\", tags=[\"mars\"])\n\n@router.get(\"/data\", response_model=ApiResponse)\nasync def get_mars_data() -> ApiResponse:\n    return ApiResponse(status=\"ok\", data=[], message=\"Data endpoint ready\")\n\n@router.get(\"/sounds\", response_model=ApiResponse)\nasync def get_sounds() -> ApiResponse:\n    return ApiResponse(status=\"ok\", data=[], message=\"Sounds endpoint ready\")\n"
+    },
+    {
+      "path": "mars_site/frontend/index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Mars Interactive Experience</title>\n    <link rel=\"stylesheet\" href=\"css/styles.css\">\n</head>\n<body>\n    <header id=\"main-header\">\n        <nav id=\"main-nav\">\n            <a href=\"#overview\">Overview</a>\n            <a href=\"#surface\">Surface</a>\n            <a href=\"#missions\">Missions</a>\n        </nav>\n    </header>\n    <main id=\"app-root\">\n        <section id=\"hero\">\n            <svg id=\"mars-hero-svg\" viewBox=\"0 0 800 600\"></svg>\n        </section>\n        <section id=\"content-area\"></section>\n    </main>\n    <script type=\"module\" src=\"js/app.js\"></script>\n</body>\n</html>\n"
+    },
+    {
+      "path": "mars_site/frontend/css/styles.css",
+      "content": ":root {\n    --color-bg: #0b0d17;\n    --color-primary: #ff6b6b;\n    --color-secondary: #4ecdc4;\n    --color-text: #e0e0e0;\n    --font-main: 'Segoe UI', system-ui, sans-serif;\n    --transition-speed: 0.3s;\n}\n\n* { box-sizing: border-box; margin: 0; padding: 0; }\nbody { background: var(--color-bg); color: var(--color-text); font-family: var(--font-main); }\n#main-header { position: fixed; top: 0; width: 100%; z-index: 100; background: rgba(11,13,23,0.9); }\n#main-nav { display: flex; justify-content: center; gap: 2rem; padding: 1rem; }\n#main-nav a { color: var(--color-text); text-decoration: none; transition: color var(--transition-speed); }\n#main-nav a:hover { color: var(--color-primary); }\n#app-root { padding-top: 80px; min-height: 100vh; }\n#hero { height: 100vh; display: flex; align-items: center; justify-content: center; }\n#mars-hero-svg { width: 100%; max-width: 600px; }\n"
+    },
+    {
+      "path": "mars_site/frontend/js/app.js",
+      "content": "import { initAudio } from './audio.js';\nimport { initAnimations } from './animations.js';\nimport { fetchMarsData } from './utils.js';\n\nexport async function init() {\n    console.log('Initializing Mars Site...');\n    initAudio();\n    initAnimations();\n    try {\n        const data = await fetchMarsData();\n        console.log('Mars data loaded:', data);\n    } catch (err) {\n        console.error('Failed to load Mars data:', err);\n    }\n}\n\ndocument.addEventListener('DOMContentLoaded', init);\n"
+    },
+    {
+      "path": "mars_site/frontend/js/animations.js",
+      "content": "export function initAnimations() {\n    console.log('Animation system initialized');\n}\n\nexport function triggerAnimation(selector, type, duration = 1000) {\n    const el = document.querySelector(selector);\n    if (!el) return;\n    console.log(`Triggering ${type} animation on ${selector}`);\n}\n\nexport function setupScrollAnimations() {\n    console.log('Scroll animations configured');\n}\n"
+    },
+    {
+      "path": "mars_site/frontend/js/svg_engine.js",
+      "content": "export function initSvgEngine() {\n    console.log('SVG engine initialized');\n}\n\nexport function renderSvgPath(svgId, pathData, duration = 1000) {\n    console.log(`Rendering path on ${svgId}`);\n}\n\nexport function animateSvgRotation(svgId, degrees, duration = 2000) {\n    console.log(`Rotating ${svgId}`);\n}\n"
+    },
+    {
+      "path": "mars_site/frontend/js/audio.js",
+      "content": "let audioContext = null;\n\nexport function initAudio() {\n    audioContext = new (window.AudioContext || window.webkitAudioContext)();\n    console.log('Audio context initialized');\n}\n\nexport function playSound(eventId) {\n    if (!audioContext) return;\n    console.log(`Playing sound: ${eventId}`);\n}\n\nexport function attachAudioTriggers() {\n    console.log('Audio triggers attached');\n}\n"
+    },
+    {
+      "path": "mars_site/frontend/js/sound_manager.js",
+      "content": "export function loadSoundManifest(url) {\n    console.log(`Loading sound manifest from ${url}`);\n    return Promise.resolve([]);\n}\n\nexport function registerSoundTrigger(eventId, soundUrl) {\n    console.log(`Registered trigger ${eventId} -> ${soundUrl}`);\n}\n\nexport function playAmbientLoop(loopId) {\n    console.log(`Playing ambient loop: ${loopId}`);\n}\n"
+    },
+    {
+      "path": "mars_site/frontend/js/components.js",
+      "content": "export function renderContentSection(containerId, data) {\n    console.log(`Rendering section ${containerId}`);\n}\n\nexport function createFactCard(fact) {\n    console.log(`Creating fact card: ${fact.title}`);\n    return document.createElement('div');\n}\n\nexport function bindDataToElements(data) {\n    console.log('Binding data to DOM elements');\n}\n"
+    },
+    {
+      "path": "mars_site/frontend/css/components.css",
+      "content": ".fact-card {\n    background: rgba(255,255,255,0.05);\n    border: 1px solid var(--color-primary);\n    padding: 1.5rem;\n    margin: 1rem 0;\n    border-radius: 8px;\n}\n\n.fact-card__title {\n    color: var(--color-primary);\n    margin-bottom: 0.5rem;\n}\n\n.fact-card__list {\n    list-style: none;\n    padding-left: 0;\n}\n\n.fact-card__list li {\n    padding: 0.25rem 0;\n    border-bottom: 1px solid rgba(255,255,255,0.1);\n}\n"
+    },
+    {
+      "path": "mars_site/frontend/js/utils.js",
+      "content": "export async function fetchMarsData() {\n    const res = await fetch('/api/mars/data');\n    if (!res.ok) throw new Error('Failed to fetch data');\n    return res.json();\n}\n\nexport async function fetchSounds() {\n    const res = await fetch('/api/mars/sounds');\n    if (!res.ok) throw new Error('Failed to fetch sounds');\n    return res.json();\n}\n\nexport function debounce(fn, delay) {\n    let timer;\n    return (...args) => {\n        clearTimeout(timer);\n        timer = setTimeout(() => fn(...args), delay);\n    };\n}\n"
+    },
+    {
+      "path": "mars_site/backend/requirements.txt",
+      "content": "fastapi>=0.100.0\nuvicorn>=0.23.0\npydantic>=2.0.0\n"
+    },
+    {
+      "path": "mars_site/frontend/data/mars_data.json",
+      "content": "[\n  {\n    \"id\": \"overview\",\n    \"title\": \"Mars Overview\",\n    \"description\": \"The Red Planet\",\n    \"image_url\": \"/assets/img/mars_overview.jpg\",\n    \"facts\": [\"4th planet from the Sun\", \"Day length: 24h 37m\", \"Gravity: 38% of Earth\"]\n  },\n  {\n    \"id\": \"surface\",\n    \"title\": \"Surface Features\",\n    \"description\": \"Canyons, Volcanoes, and Dust Storms\",\n    \"image_url\": \"/assets/img/mars_surface.jpg\",\n    \"facts\": [\"Olympus Mons is the tallest volcano\", \"Valles Marineris is huge\", \"Dust storms can cover the planet\"]\n  }\n]\n"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w0",
+      "task": "User can load the site and navigate the base layout with responsive styling",
+      "acceptance_criteria": [
+        "FastAPI serves index.html at GET /",
+        "Base CSS variables and layout structure are applied correctly",
+        "Navigation links are visible and styled with hover effects",
+        "Hero section contains the SVG container and is centered"
+      ],
+      "files_owned": [
+        "mars_site/backend/main.py",
+        "mars_site/frontend/index.html",
+        "mars_site/frontend/css/styles.css"
+      ],
+      "files_readonly": [
+        "mars_site/backend/models.py",
+        "mars_site/frontend/js/app.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w1",
+      "task": "User can fetch Mars data and sound metadata via the API",
+      "acceptance_criteria": [
+        "GET /api/mars/data returns valid MarsFact[] matching Pydantic schema",
+        "GET /api/mars/sounds returns valid SoundTrigger[] matching Pydantic schema",
+        "API routes are mounted under /api/mars prefix",
+        "Static JSON data file is structured correctly for seeding"
+      ],
+      "files_owned": [
+        "mars_site/backend/models.py",
+        "mars_site/backend/routes.py",
+        "mars_site/frontend/data/mars_data.json"
+      ],
+      "files_readonly": [
+        "mars_site/backend/main.py",
+        "mars_site/frontend/js/utils.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w2",
+      "task": "User can see interactive SVG animations on the hero section",
+      "acceptance_criteria": [
+        "SVG engine initializes and attaches to #mars-hero-svg",
+        "Path drawing and rotation animations trigger correctly",
+        "Scroll-triggered animations respond to viewport position",
+        "Animations use CSS transforms or SMIL for performance"
+      ],
+      "files_owned": [
+        "mars_site/frontend/js/animations.js",
+        "mars_site/frontend/js/svg_engine.js"
+      ],
+      "files_readonly": [
+        "mars_site/frontend/index.html",
+        "mars_site/frontend/js/app.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w3",
+      "task": "User can hear contextual sound effects on interactions",
+      "acceptance_criteria": [
+        "Web Audio API context is created on init",
+        "Sound triggers register and play on hover/click/scroll",
+        "Audio manager loads sound manifest from API",
+        "Ambient loops can be started/stopped without blocking UI"
+      ],
+      "files_owned": [
+        "mars_site/frontend/js/audio.js",
+        "mars_site/frontend/js/sound_manager.js"
+      ],
+      "files_readonly": [
+        "mars_site/frontend/js/app.js",
+        "mars_site/frontend/js/utils.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w4",
+      "task": "User can view Mars content sections with dynamic data binding",
+      "acceptance_criteria": [
+        "Content sections render dynamically from fetched MarsFact data",
+        "Fact cards use BEM CSS classes and match design tokens",
+        "Data binding updates DOM without full page reloads",
+        "Components handle missing or malformed data gracefully"
+      ],
+      "files_owned": [
+        "mars_site/frontend/js/components.js",
+        "mars_site/frontend/css/components.css"
+      ],
+      "files_readonly": [
+        "mars_site/frontend/index.html",
+        "mars_site/frontend/js/utils.js",
+        "mars_site/frontend/data/mars_data.json"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w5",
+      "task": "User gets a fully integrated, polished interactive experience",
+      "acceptance_criteria": [
+        "All systems (audio, animations, data, components) initialize in correct order",
+        "Utility functions (debounce, fetch wrappers) work without errors",
+        "Requirements.txt lists all backend dependencies",
+        "End-to-end flow loads data, renders UI, plays sounds, and animates SVGs"
+      ],
+      "files_owned": [
+        "mars_site/frontend/js/app.js",
+        "mars_site/frontend/js/utils.js",
+        "mars_site/backend/requirements.txt"
+      ],
+      "files_readonly": [
+        "mars_site/backend/main.py",
+        "mars_site/backend/routes.py",
+        "mars_site/frontend/index.html",
+        "mars_site/frontend/css/styles.css"
+      ],
+      "is_integrator": false
+    }
+  ]
+}
