@@ -205,7 +205,7 @@ function updateAtom() {
   // Rotate orbits
   const orbits = atomGroup.querySelectorAll('g[id^="orbit-"]');
   orbits.forEach((orbit, i) => {
-    const currentRotation = parseFloat(orbit.getAttribute('transform').match(/rotate\((\d+)\)/)[1]);
+    const currentRotation = parseFloat(orbit.getAttribute('transform').match(/rotate\(([\d.]+)\)/)[1]);
     const speed = 10 + i * 5;
     const newRotation = (currentRotation + speed * 0.01) % 360;
     orbit.setAttribute('transform', `rotate(${newRotation})`);
