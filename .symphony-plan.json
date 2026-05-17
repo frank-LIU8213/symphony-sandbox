@@ -1,0 +1,106 @@
+{
+  "contract": "## Shared Types\n- `SectionConfig`: `{ id: string, init: () => void, cleanup: () => void }` - Defines the lifecycle contract for each interactive section.\n- `AudioManager`: `{ play: (id: string, loop?: boolean) => void, stop: (id: string) => void }` - Centralized audio control interface.\n- `AnimationManager`: `{ animate: (selector: string, keyframes: Keyframe[], options?: KeyframeAnimationOptions) => void }` - Centralized SVG/CSS animation control interface.\n- All section modules must conform to `SectionConfig` and register via `engine.js`.\n\n## API Contract\n- `engine.js` is the single source of truth for cross-cutting concerns. It exports `initSite()`, `registerSection(config: SectionConfig)`, `audio: AudioManager`, and `anim: AnimationManager`.\n- Section files (`js/sections/*.js`) must import `registerSection` from `engine.js`, instantiate a `SectionConfig` object, and call `registerSection`. They must NOT import from each other.\n- `index.html` must load `engine.js` first, followed by all section scripts in DOM order. It must not contain inline logic.\n- CSS must use `:root` variables defined in `main.css`. No global resets or base styles outside `main.css`.\n- SVG elements must have `id` attributes that exactly match the `selector` string passed to `anim.animate()`.\n- Audio files must be placed in `assets/audio/` and referenced by `snake_case` IDs matching `audio.play()` calls.\n\n## Naming Conventions\n- JS: `camelCase` for functions/variables, `PascalCase` for types/interfaces.\n- CSS: `kebab-case` for class names, `--var-name` for custom properties.\n- HTML IDs: `kebab-case` matching section names (e.g., `#mars-overview`).\n- Audio IDs: `snake_case` matching asset filenames (e.g., `wind_howl`).\n- SVG IDs: `camelCase` matching JS selectors (e.g., `planetOrbit`).",
+  "scaffold_files": [
+    {
+      "path": "mars-site/index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Mars Interactive Explorer</title>\n  <link rel=\"stylesheet\" href=\"css/main.css\">\n</head>\n<body>\n  <header id=\"nav\">\n    <nav>\n      <a href=\"#overview\">Overview</a>\n      <a href=\"#orbit\">Solar System</a>\n      <a href=\"#surface\">Surface</a>\n    </nav>\n  </header>\n  <main id=\"app\">\n    <section id=\"overview\"></section>\n    <section id=\"orbit\"></section>\n    <section id=\"surface\"></section>\n  </main>\n  <script type=\"module\" src=\"js/engine.js\"></script>\n  <script type=\"module\" src=\"js/sections/overview.js\"></script>\n  <script type=\"module\" src=\"js/sections/orbit.js\"></script>\n  <script type=\"module\" src=\"js/sections/surface.js\"></script>\n</body>\n</html>"
+    },
+    {
+      "path": "mars-site/css/main.css",
+      "content": ":root {\n  --bg-primary: #0b0d17;\n  --text-primary: #e0e6ed;\n  --accent: #ff6b6b;\n  --mars-red: #c1440e;\n  --spacing-unit: 1rem;\n}\n\nbody {\n  margin: 0;\n  font-family: system-ui, -apple-system, sans-serif;\n  background: var(--bg-primary);\n  color: var(--text-primary);\n  overflow-x: hidden;\n}\n\n#app {\n  min-height: 100vh;\n  display: flex;\n  flex-direction: column;\n}\n\nsection {\n  min-height: 100vh;\n  padding: calc(var(--spacing-unit) * 4);\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  position: relative;\n  overflow: hidden;\n}\n\nnav {\n  display: flex;\n  gap: var(--spacing-unit);\n  padding: var(--spacing-unit);\n  background: rgba(11, 13, 23, 0.9);\n  position: fixed;\n  top: 0;\n  width: 100%;\n  z-index: 100;\n}\n\nnav a {\n  color: var(--text-primary);\n  text-decoration: none;\n  font-weight: 500;\n}"
+    },
+    {
+      "path": "mars-site/js/engine.js",
+      "content": "/**\n * @typedef {Object} SectionConfig\n * @property {string} id\n * @property {() => void} init\n * @property {() => void} cleanup\n */\n\n/**\n * @typedef {Object} AudioManager\n * @property {(id: string, loop?: boolean) => void} play\n * @property {(id: string) => void} stop\n */\n\n/**\n * @typedef {Object} AnimationManager\n * @property {(selector: string, keyframes: Keyframe[], options?: KeyframeAnimationOptions) => void} animate\n */\n\n/** @type {AnimationManager} */\nexport const anim = {\n  /**\n   * @param {string} selector\n   * @param {Keyframe[]} keyframes\n   * @param {KeyframeAnimationOptions} [options]\n   */\n  animate(selector, keyframes, options = {}) {\n    // TODO: Implement SVG/CSS animation engine\n  }\n};\n\n/** @type {AudioManager} */\nexport const audio = {\n  /**\n   * @param {string} id\n   * @param {boolean} [loop]\n   */\n  play(id, loop = false) {\n    // TODO: Implement audio playback\n  },\n  /**\n   * @param {string} id\n   */\n  stop(id) {\n    // TODO: Implement audio stop\n  }\n};\n\n/**\n * @param {SectionConfig} config\n */\nexport function registerSection(config) {\n  // TODO: Implement section registry\n}\n\nexport function initSite() {\n  // TODO: Initialize site, attach scroll observers, start engine\n}"
+    },
+    {
+      "path": "mars-site/js/sections/overview.js",
+      "content": "import { registerSection } from '../engine.js';\n\n/**\n * @returns {import('../engine.js').SectionConfig}\n */\nexport function createOverviewSection() {\n  return {\n    id: 'overview',\n    /** @returns {void} */\n    init() {\n      // TODO: Setup Mars overview SVG animations\n    },\n    /** @returns {void} */\n    cleanup() {\n      // TODO: Cleanup overview animations\n    }\n  };\n}\n\nregisterSection(createOverviewSection());"
+    },
+    {
+      "path": "mars-site/js/sections/orbit.js",
+      "content": "import { registerSection } from '../engine.js';\n\n/**\n * @returns {import('../engine.js').SectionConfig}\n */\nexport function createOrbitSection() {\n  return {\n    id: 'orbit',\n    /** @returns {void} */\n    init() {\n      // TODO: Setup solar system orbit animations\n    },\n    /** @returns {void} */\n    cleanup() {\n      // TODO: Cleanup orbit animations\n    }\n  };\n}\n\nregisterSection(createOrbitSection());"
+    },
+    {
+      "path": "mars-site/js/sections/surface.js",
+      "content": "import { registerSection } from '../engine.js';\n\n/**\n * @returns {import('../engine.js').SectionConfig}\n */\nexport function createSurfaceSection() {\n  return {\n    id: 'surface',\n    /** @returns {void} */\n    init() {\n      // TODO: Setup surface parallax & audio triggers\n    },\n    /** @returns {void} */\n    cleanup() {\n      // TODO: Cleanup surface animations & audio\n    }\n  };\n}\n\nregisterSection(createSurfaceSection());"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w0",
+      "task": "User can view the core site layout with responsive navigation, CSS variables, and the central animation/audio engine initialized.",
+      "acceptance_criteria": [
+        "index.html renders header, main container with 3 sections, and loads scripts in correct order",
+        "engine.js exports initSite, registerSection, audio, and anim with correct signatures",
+        "main.css defines :root variables and base section styling without conflicts",
+        "No inline JS or CSS exists outside scaffolded files"
+      ],
+      "files_owned": [
+        "mars-site/index.html",
+        "mars-site/css/main.css",
+        "mars-site/js/engine.js"
+      ],
+      "files_readonly": [],
+      "effort": "M",
+      "is_integrator": false
+    },
+    {
+      "id": "w1",
+      "task": "User can explore the Mars Overview section with animated SVG diagrams and factual content cards.",
+      "acceptance_criteria": [
+        "overview.js registers a section with id 'overview' and implements init/cleanup",
+        "init() creates at least 2 SVG animations using anim.animate()",
+        "cleanup() properly removes event listeners and stops animations",
+        "Section renders correctly within #overview container"
+      ],
+      "files_owned": [
+        "mars-site/js/sections/overview.js"
+      ],
+      "files_readonly": [
+        "mars-site/js/engine.js",
+        "mars-site/index.html"
+      ],
+      "effort": "M",
+      "is_integrator": false
+    },
+    {
+      "id": "w2",
+      "task": "User can interact with the Solar System visualization, triggering orbit animations and planet highlights.",
+      "acceptance_criteria": [
+        "orbit.js registers a section with id 'orbit' and implements init/cleanup",
+        "init() sets up continuous orbit paths and click/hover interactions",
+        "Uses audio.play() for interaction feedback sounds",
+        "cleanup() stops all loops and removes DOM event listeners"
+      ],
+      "files_owned": [
+        "mars-site/js/sections/orbit.js"
+      ],
+      "files_readonly": [
+        "mars-site/js/engine.js",
+        "mars-site/index.html"
+      ],
+      "effort": "M",
+      "is_integrator": false
+    },
+    {
+      "id": "w3",
+      "task": "User can experience the Surface Exploration section with parallax scrolling, triggered sound effects, and mission timeline.",
+      "acceptance_criteria": [
+        "surface.js registers a section with id 'surface' and implements init/cleanup",
+        "init() binds scroll-triggered animations and audio cues",
+        "audio.play() and audio.stop() are called correctly based on user interaction",
+        "cleanup() halts all audio and animation frames"
+      ],
+      "files_owned": [
+        "mars-site/js/sections/surface.js"
+      ],
+      "files_readonly": [
+        "mars-site/js/engine.js",
+        "mars-site/index.html"
+      ],
+      "effort": "M",
+      "is_integrator": false
+    }
+  ]
+}
