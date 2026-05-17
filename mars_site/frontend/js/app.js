@@ -1,16 +1,72 @@
-import { initAudio } from './audio.js';
-import { initAnimations } from './animations.js';
-import { fetchMarsData } from './utils.js';
+import { initAudio, attachAudioTriggers } from './audio.js';
+import { initAnimations, setupScrollAnimations, triggerAnimation } from './animations.js';
+import { initSvgEngine, renderSvgPath, animateSvgRotation } from './svg_engine.js';
+import { loadSoundManifest, registerSoundTrigger, playAmbientLoop } from './sound_manager.js';
+import { fetchMarsData, fetchSounds, debounce } from './utils.js';
+import { renderContentSection, createFactCard, bindDataToElements } from './components.js';
 
+/**
+ * Main initialization routine for the Mars Interactive Experience.
+ * Orchestrates data fetching, UI rendering, audio, and animations.
+ */
 export async function init() {
     console.log('Initializing Mars Site...');
-    initAudio();
-    initAnimations();
+    
     try {
-        const data = await fetchMarsData();
-        console.log('Mars data loaded:', data);
+        // 1. Initialize core systems
+        initAudio();
+        initSvgEngine();
+        initAnimations();
+        
+        // 2. Fetch data in parallel
+        const [marsResponse, soundsResponse] = await Promise.all([
+            fetchMarsData(),
+            fetchSounds()
+        ]);
+        
+        console.log('Mars data loaded:', marsResponse);
+        console.log('Sounds data loaded:', soundsResponse);
+        
+        // 3. Setup sound system
+        if (soundsResponse?.data?.length) {
+            await loadSoundManifest('/api/mars/sounds');
+            soundsResponse.data.forEach(sound => {
+                registerSoundTrigger(sound.id, sound.url);
+            });
+            playAmbientLoop('mars-ambient');
+        }
+        
+        // 4. Render content sections
+        const container = document.getElementById('content-area');
+        if (container && marsResponse?.data?.length) {
+            renderContentSection('content-area', marsResponse.data);
+            bindDataToElements(marsResponse.data);
+        }
+        
+        // 5. Setup interactions & animations
+        setupScrollAnimations();
+        attachAudioTriggers();
+        
+        // 6. Hero SVG animation
+        const heroSvg = document.getElementById('mars-hero-svg');
+        if (heroSvg) {
+            renderSvgPath('mars-hero-svg', 'M 100 300 Q 400 100 700 300 T 100 300', 2000);
+            animateSvgRotation('mars-hero-svg', 360, 12000);
+        }
+        
+        console.log('Mars Site initialized successfully.');
+        
     } catch (err) {
-        console.error('Failed to load Mars data:', err);
+        console.error('Failed to initialize Mars Site:', err);
+        const container = document.getElementById('content-area');
+        if (container) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 3rem; color: #ff6b6b; font-family: var(--font-main);">
+                    <h2>Failed to Load Experience</h2>
+                    <p>Please check your connection and reload.</p>
+                </div>
+            `;
+        }
     }
 }
 
