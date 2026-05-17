@@ -1,9 +1,9 @@
 import { initAudio, attachAudioTriggers } from './audio.js';
 import { initAnimations, setupScrollAnimations, triggerAnimation } from './animations.js';
 import { initSvgEngine, renderSvgPath, animateSvgRotation } from './svg_engine.js';
-import { loadSoundManifest, registerSoundTrigger, playAmbientLoop } from './sound_manager.js';
+import { loadSoundManifest, registerSoundTrigger, playAmbientLoop, bindTriggersToElements } from './sound_manager.js';
 import { fetchMarsData, fetchSounds, debounce } from './utils.js';
-import { renderContentSection, createFactCard, bindDataToElements } from './components.js';
+import { createFactCard, bindDataToElements } from './components.js';
 
 /**
  * Main initialization routine for the Mars Interactive Experience.
@@ -33,18 +33,17 @@ export async function init() {
             soundsResponse.data.forEach(sound => {
                 registerSoundTrigger(sound.id, sound.url);
             });
-            playAmbientLoop('mars-ambient');
+            playAmbientLoop('wind-ambient');
+            bindTriggersToElements();
         }
         
         // 4. Render content sections
         const container = document.getElementById('content-area');
         if (container && marsResponse?.data?.length) {
-            renderContentSection('content-area', marsResponse.data);
             bindDataToElements(marsResponse.data);
         }
         
         // 5. Setup interactions & animations
-        setupScrollAnimations();
         attachAudioTriggers();
         
         // 6. Hero SVG animation
