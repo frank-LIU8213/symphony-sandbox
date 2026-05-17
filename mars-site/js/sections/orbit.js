@@ -4,6 +4,11 @@ import { registerSection, anim, audio } from '../engine.js';
  * @returns {import('../engine.js').SectionConfig}
  */
 export function createOrbitSection() {
+  /** @type {NodeListOf<HTMLElement> | null} */
+  let _planets = null;
+  /** @type {((e: Event) => void) | null} */
+  let _clickHandler = null;
+
   return {
     id: 'orbit',
     /** @returns {void} */
@@ -121,7 +126,7 @@ export function createOrbitSection() {
         if (speeds[i]) orbit.style.animationDuration = `${speeds[i]}s`;
       });
 
-      const planets = section.querySelectorAll('.planet');
+      _planets = section.querySelectorAll('.planet');
       const infoPanel = document.getElementById('planet-info-panel');
       const nameEl = document.getElementById('planet-name');
       const descEl = document.getElementById('planet-desc');
@@ -135,29 +140,35 @@ export function createOrbitSection() {
         Saturn: { desc: "Famous for its spectacular ring system made of ice and rock." }
       };
 
-      planets.forEach(planet => {
-        planet.addEventListener('click', () => {
-          planets.forEach(p => p.classList.remove('highlighted'));
-          planet.classList.add('highlighted');
-          
-          const name = planet.getAttribute('data-name');
-          nameEl.textContent = name;
-          descEl.textContent = planetData[name]?.desc || "Explore this celestial body.";
-          infoPanel.classList.add('visible');
+      _clickHandler = (e) => {
+        _planets.forEach(p => p.classList.remove('highlighted'));
+        const planet = e.currentTarget;
+        planet.classList.add('highlighted');
+        
+        const name = planet.getAttribute('data-name');
+        nameEl.textContent = name;
+        descEl.textContent = planetData[name]?.desc || "Explore this celestial body.";
+        infoPanel.classList.add('visible');
 
-          anim.animate('#' + planet.id, [
-            { transform: 'scale(1.5)', filter: 'drop-shadow(0 0 10px #ffcc00)' },
-            { transform: 'scale(1)', filter: 'drop-shadow(0 0 0px transparent)' }
-          ], { duration: 400, easing: 'ease-out' });
-          
-          if (audio) audio.play('click');
-        });
+        anim.animate('#' + planet.id, [
+          { transform: 'scale(1.5)', filter: 'drop-shadow(0 0 10px #ffcc00)' },
+          { transform: 'scale(1)', filter: 'drop-shadow(0 0 0px transparent)' }
+        ], { duration: 400, easing: 'ease-out' });
+        
+        if (audio) audio.play('click');
+      };
+
+      _planets.forEach(planet => {
+        planet.addEventListener('click', _clickHandler);
       });
     },
     /** @returns {void} */
     cleanup() {
       const style = document.querySelector('style[data-orbit-section]');
       if (style) style.remove();
+      if (_clickHandler && _planets) {
+        _planets.forEach(planet => planet.removeEventListener('click', _clickHandler));
+      }
     }
   };
 }

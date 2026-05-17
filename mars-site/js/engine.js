@@ -22,6 +22,7 @@ export const anim = {
    * @param {string} selector
    * @param {Keyframe[]} keyframes
    * @param {KeyframeAnimationOptions} [options]
+   * @returns {Animation | void}
    */
   animate(selector, keyframes, options = {}) {
     const el = document.querySelector(selector);
@@ -29,7 +30,7 @@ export const anim = {
       console.warn(`[anim] Element not found: ${selector}`);
       return;
     }
-    el.animate(keyframes, options);
+    return el.animate(keyframes, options);
   }
 };
 
@@ -81,13 +82,6 @@ const sections = [];
  */
 export function registerSection(config) {
   sections.push(config);
-}
-
-/**
- * @returns {SectionConfig[]}
- */
-export function getSections() {
-  return sections;
 }
 
 export function initSite() {

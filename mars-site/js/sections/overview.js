@@ -4,6 +4,13 @@ import { registerSection, anim, audio } from '../engine.js';
  * @returns {import('../engine.js').SectionConfig}
  */
 export function createOverviewSection() {
+  /** @type {Animation[]} */
+  let _animations = [];
+  /** @type {SVGSVGElement | null} */
+  let _svg = null;
+  /** @type {(() => void) | null} */
+  let _clickHandler = null;
+
   return {
     id: 'overview',
     /** @returns {void} */
@@ -21,6 +28,7 @@ export function createOverviewSection() {
       svg.style.cursor = 'pointer';
       svg.style.transformBox = 'fill-box';
       svg.style.transformOrigin = 'center';
+      _svg = svg;
 
       // Background grid
       const grid = document.createElementNS(svgNS, 'g');
@@ -106,27 +114,28 @@ export function createOverviewSection() {
       section.appendChild(svg);
 
       // Animate atmosphere pulse
-      anim.animate('#marsAtmosphere', [
+      _animations.push(anim.animate('#marsAtmosphere', [
         { opacity: 0.2, r: 110 },
         { opacity: 0.6, r: 116 },
         { opacity: 0.2, r: 110 }
-      ], { duration: 4000, iterations: Infinity, easing: 'ease-in-out' });
+      ], { duration: 4000, iterations: Infinity, easing: 'ease-in-out' }));
 
       // Animate orbit rotation
-      anim.animate('#marsOrbit', [
+      _animations.push(anim.animate('#marsOrbit', [
         { transform: 'rotate(0deg)', transformOrigin: '200px 200px' },
         { transform: 'rotate(360deg)', transformOrigin: '200px 200px' }
-      ], { duration: 20000, iterations: Infinity, easing: 'linear' });
+      ], { duration: 20000, iterations: Infinity, easing: 'linear' }));
 
       // Interactive click
-      svg.addEventListener('click', () => {
+      _clickHandler = () => {
         anim.animate('#marsPlanet', [
           { transform: 'scale(1)', transformOrigin: '200px 200px' },
           { transform: 'scale(1.08)', transformOrigin: '200px 200px' },
           { transform: 'scale(1)', transformOrigin: '200px 200px' }
         ], { duration: 600, easing: 'ease-out' });
         audio.play('click_confirm');
-      });
+      };
+      svg.addEventListener('click', _clickHandler);
 
       // Play ambient sound
       audio.play('mars_ambient', true);
@@ -176,10 +185,10 @@ export function createOverviewSection() {
 
         // Staggered entrance animation
         setTimeout(() => {
-          anim.animate(card, [
+          _animations.push(anim.animate(card, [
             { opacity: 0, transform: 'translateY(20px)' },
             { opacity: 1, transform: 'translateY(0)' }
-          ], { duration: 600, easing: 'ease-out', fill: 'forwards' });
+          ], { duration: 600, easing: 'ease-out', fill: 'forwards' }));
         }, 300 + i * 200);
       });
 
@@ -187,6 +196,11 @@ export function createOverviewSection() {
     },
     /** @returns {void} */
     cleanup() {
+      if (_clickHandler && _svg) {
+        _svg.removeEventListener('click', _clickHandler);
+      }
+      _animations.forEach(a => a.cancel());
+      _animations = [];
       audio.stop('mars_ambient');
     }
   };

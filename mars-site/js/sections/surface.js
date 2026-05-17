@@ -140,6 +140,7 @@ export function createSurfaceSection() {
       if (injectedStyle) {
         injectedStyle.remove();
       }
+      audio.stop('surface_wind');
       const section = document.getElementById('surface');
       if (section) {
         section.innerHTML = '';
