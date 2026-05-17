@@ -3,6 +3,9 @@
  * @param {HTMLElement} root - The #app container.
  * @returns {void}
  */
+import { playSound } from './sounds.js';
+import { triggerAnimation } from './animations.js';
+
 export function initInteractions(root) {
   const massSlider = root.querySelector('#mass-slider');
   const massValue = root.querySelector('#mass-value');
@@ -18,12 +21,18 @@ export function initInteractions(root) {
     const c = 299792458;
     const energy = mass * c * c;
     energyDisplay.textContent = `Energy: ${energy.toExponential(2)} J`;
+    playSound('click');
   });
 
   if (speedToggle) {
+    let isActive = false;
     speedToggle.addEventListener('click', () => {
-      // TODO: Toggle light speed visualization state
-      console.log('[Interactions] Speed toggle clicked');
+      isActive = !isActive;
+      speedToggle.textContent = isActive ? 'Stop Light Speed' : 'Toggle Light Speed';
+      if (isActive) {
+        triggerAnimation('light-particle');
+        playSound('whoosh');
+      }
     });
   }
 }
