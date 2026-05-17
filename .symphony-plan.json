@@ -1,0 +1,138 @@
+{
+  "contract": "## Shared Types\n- `AnimationEngine`: Manages SVG particle systems and JS-driven transforms. Exports `initAnimations(root: HTMLElement): void` and `triggerAnimation(target: 'atom' | 'light-particle'): void`.\n- `InteractionController`: Handles DOM events for interactive demos (mass sliders, speed toggles). Exports `initInteractions(root: HTMLElement): void`.\n- `SoundManager`: Wraps Web Audio API for procedural sci-fi SFX. Exports `initSounds(): Promise<void>` and `playSound(type: 'click' | 'whoosh' | 'hum' | 'alarm'): void`.\n- `App`: Bootstraps the site, initializes modules in dependency order, and manages global state. Exports `initApp(): void`.\n\n## API Contract\n- `src/main.js` is the application entry point. It imports all modules, calls `initSounds()` on first user gesture, then `initAnimations(app)`, then `initInteractions(app)`, and attaches a global `DOMContentLoaded` listener.\n- `index.html` serves as the single-page shell. It contains `<main id=\"app\">` with three semantic sections: `#hero` (SVG atom/light intro), `#mass-energy` (E=mc² simulator), `#light-speed` (velocity visualization). It loads `src/main.js` via `<script type=\"module\">`.\n- `styles.css` defines the tech-sci-fi theme, grid/flex layouts, and responsive breakpoints. It must not be modified by JS agents.\n- `src/animations.js` operates exclusively on SVG elements inside `#hero` and `#light-speed`. It must not touch DOM outside these containers.\n- `src/interactions.js` operates exclusively on form controls inside `#mass-energy` and `#light-speed`. It must not touch DOM outside these containers.\n- `src/sounds.js` initializes `AudioContext` lazily on first user gesture. All `playSound` calls must be synchronous wrappers around queued audio nodes.\n\n## Naming Conventions\n- JavaScript: `camelCase` for functions/variables, `UPPER_SNAKE_CASE` for constants, `PascalCase` for classes. JSDoc `@typedef` used for all public interfaces.\n- CSS: `kebab-case` for class names, BEM-like structure (`section__element--state`). No inline styles.\n- SVG: `id` attributes must exactly match JS selector strings. Use `<g>` groups for animation targets.\n- File paths: forward slashes, `src/` prefix for JS modules.",
+  "scaffold_files": [
+    {
+      "path": "index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Nuclear Mass & Light Speed | Interactive科普</title>\n  <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n  <header class=\"site-header\">\n    <h1>Nuclear Mass & Light Speed</h1>\n    <p class=\"subtitle\">An Interactive Journey into Physics</p>\n  </header>\n  <main id=\"app\">\n    <section id=\"hero\" class=\"section\">\n      <h2>The Nucleus & The Speed of Light</h2>\n      <svg id=\"hero-svg\" viewBox=\"0 0 800 400\" xmlns=\"http://www.w3.org/2000/svg\">\n        <g id=\"atom-group\"></g>\n        <g id=\"light-particles\"></g>\n      </svg>\n    </section>\n    <section id=\"mass-energy\" class=\"section\">\n      <h2>E = mc² Simulator</h2>\n      <div class=\"controls\">\n        <label for=\"mass-slider\">Mass (kg): <span id=\"mass-value\">1</span></label>\n        <input type=\"range\" id=\"mass-slider\" min=\"1\" max=\"100\" value=\"1\">\n        <div id=\"energy-display\">Energy: 0 J</div>\n      </div>\n    </section>\n    <section id=\"light-speed\" class=\"section\">\n      <h2>Velocity Visualization</h2>\n      <div class=\"controls\">\n        <button id=\"toggle-speed\">Toggle Light Speed</button>\n        <svg id=\"speed-svg\" viewBox=\"0 0 800 200\" xmlns=\"http://www.w3.org/2000/svg\">\n          <g id=\"speed-trails\"></g>\n        </svg>\n      </div>\n    </section>\n  </main>\n  <script type=\"module\" src=\"src/main.js\"></script>\n</body>\n</html>"
+    },
+    {
+      "path": "styles.css",
+      "content": ":root {\n  --bg-color: #0a0e17;\n  --text-color: #e0e6ed;\n  --accent-color: #00f3ff;\n  --secondary-accent: #ff0055;\n  --panel-bg: rgba(20, 30, 50, 0.8);\n}\n\nbody {\n  margin: 0;\n  font-family: 'Segoe UI', system-ui, sans-serif;\n  background-color: var(--bg-color);\n  color: var(--text-color);\n  line-height: 1.6;\n}\n\n.site-header {\n  text-align: center;\n  padding: 2rem;\n  background: linear-gradient(180deg, #000 0%, var(--bg-color) 100%);\n}\n\n.section {\n  max-width: 900px;\n  margin: 2rem auto;\n  padding: 1.5rem;\n  background: var(--panel-bg);\n  border: 1px solid var(--accent-color);\n  border-radius: 8px;\n  box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);\n}\n\n.controls {\n  display: flex;\n  flex-direction: column;\n  gap: 1rem;\n  margin-top: 1rem;\n}\n\ninput[type=\"range\"] {\n  width: 100%;\n  accent-color: var(--accent-color);\n}\n\nbutton {\n  background: var(--accent-color);\n  color: #000;\n  border: none;\n  padding: 0.75rem 1.5rem;\n  font-weight: bold;\n  cursor: pointer;\n  border-radius: 4px;\n  transition: transform 0.1s;\n}\n\nbutton:active {\n  transform: scale(0.98);\n}\n\nsvg {\n  width: 100%;\n  height: auto;\n  background: #000;\n  border-radius: 4px;\n}"
+    },
+    {
+      "path": "src/animations.js",
+      "content": "/**\n * @typedef {'atom' | 'light-particle'} AnimationTarget\n */\n\n/**\n * Initializes SVG animations for the hero and light-speed sections.\n * @param {HTMLElement} root - The #app container.\n * @returns {void}\n */\nexport function initAnimations(root) {\n  const heroSvg = root.querySelector('#hero-svg');\n  const speedSvg = root.querySelector('#speed-svg');\n  if (!heroSvg || !speedSvg) return;\n\n  // TODO: Implement atom orbit animation\n  // TODO: Implement light particle trail animation\n  console.log('[Animations] Initialized');\n}\n\n/**\n * Triggers a specific SVG animation sequence.\n * @param {AnimationTarget} target \n * @returns {void}\n */\nexport function triggerAnimation(target) {\n  console.log(`[Animations] Triggering: ${target}`);\n}"
+    },
+    {
+      "path": "src/interactions.js",
+      "content": "/**\n * Initializes interactive controls for E=mc² and light speed demos.\n * @param {HTMLElement} root - The #app container.\n * @returns {void}\n */\nexport function initInteractions(root) {\n  const massSlider = root.querySelector('#mass-slider');\n  const massValue = root.querySelector('#mass-value');\n  const energyDisplay = root.querySelector('#energy-display');\n  const speedToggle = root.querySelector('#toggle-speed');\n\n  if (!massSlider || !massValue || !energyDisplay) return;\n\n  massSlider.addEventListener('input', (e) => {\n    const mass = Number(e.target.value);\n    massValue.textContent = mass;\n    // E = mc^2\n    const c = 299792458;\n    const energy = mass * c * c;\n    energyDisplay.textContent = `Energy: ${energy.toExponential(2)} J`;\n  });\n\n  if (speedToggle) {\n    speedToggle.addEventListener('click', () => {\n      // TODO: Toggle light speed visualization state\n      console.log('[Interactions] Speed toggle clicked');\n    });\n  }\n}"
+    },
+    {
+      "path": "src/sounds.js",
+      "content": "let audioCtx = null;\n\n/**\n * Initializes the Web Audio API context. Must be called on user gesture.\n * @returns {Promise<void>}\n */\nexport async function initSounds() {\n  if (audioCtx) return;\n  audioCtx = new (window.AudioContext || window.webkitAudioContext)();\n  await audioCtx.resume();\n  console.log('[Sounds] AudioContext initialized');\n}\n\n/**\n * Plays a procedural sci-fi sound effect.\n * @param {'click' | 'whoosh' | 'hum' | 'alarm'} type \n * @returns {void}\n */\nexport function playSound(type) {\n  if (!audioCtx) return;\n  const osc = audioCtx.createOscillator();\n  const gain = audioCtx.createGain();\n  osc.connect(gain);\n  gain.connect(audioCtx.destination);\n\n  const now = audioCtx.currentTime;\n  switch (type) {\n    case 'click':\n      osc.frequency.setValueAtTime(800, now);\n      osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);\n      gain.gain.setValueAtTime(0.3, now);\n      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);\n      osc.start(now);\n      osc.stop(now + 0.1);\n      break;\n    case 'whoosh':\n      osc.type = 'sawtooth';\n      osc.frequency.setValueAtTime(200, now);\n      osc.frequency.linearRampToValueAtTime(600, now + 0.3);\n      gain.gain.setValueAtTime(0.1, now);\n      gain.gain.linearRampToValueAtTime(0, now + 0.3);\n      osc.start(now);\n      osc.stop(now + 0.3);\n      break;\n    case 'hum':\n      osc.type = 'sine';\n      osc.frequency.setValueAtTime(60, now);\n      gain.gain.setValueAtTime(0.05, now);\n      gain.gain.linearRampToValueAtTime(0, now + 1.0);\n      osc.start(now);\n      osc.stop(now + 1.0);\n      break;\n    case 'alarm':\n      osc.type = 'square';\n      osc.frequency.setValueAtTime(440, now);\n      osc.frequency.setValueAtTime(880, now + 0.1);\n      gain.gain.setValueAtTime(0.2, now);\n      gain.gain.linearRampToValueAtTime(0, now + 0.4);\n      osc.start(now);\n      osc.stop(now + 0.4);\n      break;\n  }\n}"
+    },
+    {
+      "path": "src/main.js",
+      "content": "import { initSounds, playSound } from './sounds.js';\nimport { initAnimations } from './animations.js';\nimport { initInteractions } from './interactions.js';\n\n/**\n * Bootstraps the interactive physics website.\n * Initializes audio, animations, and interactions in dependency order.\n * @returns {void}\n */\nexport function initApp() {\n  const app = document.getElementById('app');\n  if (!app) {\n    console.error('[App] #app container not found');\n    return;\n  }\n\n  // Initialize sounds on first user gesture\n  const unlockAudio = async () => {\n    await initSounds();\n    playSound('click');\n    document.body.removeEventListener('click', unlockAudio);\n  };\n  document.body.addEventListener('click', unlockAudio, { once: true });\n\n  // Initialize visual and interaction modules\n  initAnimations(app);\n  initInteractions(app);\n\n  console.log('[App] Initialization complete');\n}\n\nif (document.readyState === 'loading') {\n  document.addEventListener('DOMContentLoaded', initApp);\n} else {\n  initApp();\n}"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w0",
+      "task": "User can view the hero section with a responsive sci-fi layout and SVG placeholders for the nucleus and light particles.",
+      "acceptance_criteria": [
+        "index.html renders three sections with IDs #hero, #mass-energy, #light-speed",
+        "styles.css applies dark background, cyan accents, and panel styling",
+        "SVG elements #hero-svg and #speed-svg are present with correct viewBox and group IDs",
+        "Layout is responsive and centers content on desktop/mobile"
+      ],
+      "files_owned": [
+        "index.html",
+        "styles.css"
+      ],
+      "files_readonly": [
+        "src/animations.js",
+        "src/interactions.js",
+        "src/sounds.js",
+        "src/main.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w1",
+      "task": "User can see animated SVG atoms and light trails in the hero and light-speed sections.",
+      "acceptance_criteria": [
+        "src/animations.js exports initAnimations(root) and triggerAnimation(target)",
+        "initAnimations targets #hero-svg and #speed-svg without affecting other DOM",
+        "Contains concrete SVG animation logic stubs for atom orbits and particle trails",
+        "triggerAnimation accepts 'atom' and 'light-particle' and logs/queues effects"
+      ],
+      "files_owned": [
+        "src/animations.js"
+      ],
+      "files_readonly": [
+        "index.html",
+        "styles.css",
+        "src/interactions.js",
+        "src/sounds.js",
+        "src/main.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w2",
+      "task": "User can interact with the E=mc² mass slider to see real-time energy calculations and toggle light speed visualization.",
+      "acceptance_criteria": [
+        "src/interactions.js exports initInteractions(root)",
+        "Attaches input listener to #mass-slider that updates #mass-value and #energy-display",
+        "Energy calculation uses c = 299792458 and displays in scientific notation",
+        "Attaches click listener to #toggle-speed for light speed state toggling",
+        "No DOM manipulation outside #mass-energy and #light-speed sections"
+      ],
+      "files_owned": [
+        "src/interactions.js"
+      ],
+      "files_readonly": [
+        "index.html",
+        "styles.css",
+        "src/animations.js",
+        "src/sounds.js",
+        "src/main.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w3",
+      "task": "User hears procedural sci-fi sound effects on interactions (clicks, speed toggles, system hum).",
+      "acceptance_criteria": [
+        "src/sounds.js exports initSounds() and playSound(type)",
+        "initSounds() creates and resumes Web AudioContext safely",
+        "playSound() handles 'click', 'whoosh', 'hum', 'alarm' with distinct oscillator/gain envelopes",
+        "AudioContext is not created until first user gesture to comply with browser policies"
+      ],
+      "files_owned": [
+        "src/sounds.js"
+      ],
+      "files_readonly": [
+        "index.html",
+        "styles.css",
+        "src/animations.js",
+        "src/interactions.js",
+        "src/main.js"
+      ],
+      "is_integrator": false
+    },
+    {
+      "id": "w_integrator",
+      "task": "User can launch the site and experience a fully wired interactive physics demo with synchronized visuals and audio.",
+      "acceptance_criteria": [
+        "src/main.js is the sole entry point and imports all four modules",
+        "Calls initSounds() on first body click, then initAnimations(app) and initInteractions(app)",
+        "Binds initialization to DOMContentLoaded",
+        "No other agent modifies src/main.js",
+        "Console logs confirm sequential initialization order"
+      ],
+      "files_owned": [
+        "src/main.js"
+      ],
+      "files_readonly": [
+        "index.html",
+        "styles.css",
+        "src/animations.js",
+        "src/interactions.js",
+        "src/sounds.js"
+      ],
+      "is_integrator": true
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+:root {
+  --bg-color: #0a0e17;
+  --text-color: #e0e6ed;
+  --accent-color: #00f3ff;
+  --secondary-accent: #ff0055;
+  --panel-bg: rgba(20, 30, 50, 0.8);
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+.site-header {
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(180deg, #000 0%, var(--bg-color) 100%);
+}
+
+.section {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: var(--panel-bg);
+  border: 1px solid var(--accent-color);
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent-color);
+}
+
+button {
+  background: var(--accent-color);
+  color: #000;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: transform 0.1s;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+svg {
+  width: 100%;
+  height: auto;
+  background: #000;
+  border-radius: 4px;
+}

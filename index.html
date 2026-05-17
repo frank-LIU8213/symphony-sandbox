@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuclear Mass & Light Speed | Interactive科普</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1>Nuclear Mass & Light Speed</h1>
+    <p class="subtitle">An Interactive Journey into Physics</p>
+  </header>
+  <main id="app">
+    <section id="hero" class="section">
+      <h2>The Nucleus & The Speed of Light</h2>
+      <svg id="hero-svg" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+        <g id="atom-group"></g>
+        <g id="light-particles"></g>
+      </svg>
+    </section>
+    <section id="mass-energy" class="section">
+      <h2>E = mc² Simulator</h2>
+      <div class="controls">
+        <label for="mass-slider">Mass (kg): <span id="mass-value">1</span></label>
+        <input type="range" id="mass-slider" min="1" max="100" value="1">
+        <div id="energy-display">Energy: 0 J</div>
+      </div>
+    </section>
+    <section id="light-speed" class="section">
+      <h2>Velocity Visualization</h2>
+      <div class="controls">
+        <button id="toggle-speed">Toggle Light Speed</button>
+        <svg id="speed-svg" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+          <g id="speed-trails"></g>
+        </svg>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
