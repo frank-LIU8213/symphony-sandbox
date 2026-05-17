@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mars Interactive Experience</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <header id="main-header" class="site-header">
+        <nav id="main-nav" class="site-nav" data-nav="main">
+            <a href="#hero" class="nav-link" data-nav-link="hero">Home</a>
+            <a href="#overview" class="nav-link" data-nav-link="overview">Overview</a>
+            <a href="#surface" class="nav-link" data-nav-link="surface">Surface</a>
+            <a href="#missions" class="nav-link" data-nav-link="missions">Missions</a>
+        </nav>
+    </header>
+
+    <main id="app-root" class="app-root">
+        <!-- Hero Section -->
+        <section id="hero" class="hero-section" data-section="hero">
+            <div class="hero-bg" data-hero-bg="stars"></div>
+            <div class="hero-content">
+                <h1 class="hero-title" data-hero-title="main">Explore Mars</h1>
+                <p class="hero-subtitle" data-hero-subtitle="main">The Red Planet Awaits</p>
+                <a href="#overview" class="hero-cta btn-primary" data-cta="explore">Begin Journey</a>
+            </div>
+            <div class="hero-visual" data-hero-visual="mars">
+                <svg id="mars-hero-svg" viewBox="0 0 800 600" class="mars-svg" data-svg="hero-mars">
+                    <!-- Mars planet placeholder - w2 will animate this -->
+                    <circle cx="400" cy="300" r="180" fill="none" stroke="rgba(255,107,107,0.3)" stroke-width="2" stroke-dasharray="8,4"/>
+                    <circle cx="400" cy="300" r="160" fill="none" stroke="rgba(255,107,107,0.15)" stroke-width="1"/>
+                </svg>
+            </div>
+        </section>
+
+        <div id="content-area"></div>
+
+        <!-- Overview Section -->
+        <section id="overview" class="content-section" data-section="overview">
+            <div class="container">
+                <h2 class="section-title" data-section-title="overview">Mars Overview</h2>
+                <p class="section-intro" data-section-intro="overview">Discover the fundamental characteristics of the Red Planet</p>
+                <div class="section-content" data-section-content="overview">
+                    <div class="fact-grid" data-fact-grid="overview">
+                        <!-- w4 will populate with MarsFact data -->
+                        <div class="placeholder-card" data-placeholder="overview-facts">
+                            <div class="placeholder-card__icon" data-placeholder-icon="overview"></div>
+                            <h3 class="placeholder-card__title">Loading Mars data...</h3>
+                            <p class="placeholder-card__text">Mars facts will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Surface Section -->
+        <section id="surface" class="content-section" data-section="surface">
+            <div class="container">
+                <h2 class="section-title" data-section-title="surface">Surface Features</h2>
+                <p class="section-intro" data-section-intro="surface">Canyons, Volcanoes, and Dust Storms</p>
+                <div class="section-content" data-section-content="surface">
+                    <div class="fact-grid" data-fact-grid="surface">
+                        <!-- w4 will populate with MarsFact data -->
+                        <div class="placeholder-card" data-placeholder="surface-facts">
+                            <div class="placeholder-card__icon" data-placeholder-icon="surface"></div>
+                            <h3 class="placeholder-card__title">Loading surface data...</h3>
+                            <p class="placeholder-card__text">Surface features will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Missions Section -->
+        <section id="missions" class="content-section" data-section="missions">
+            <div class="container">
+                <h2 class="section-title" data-section-title="missions">Missions</h2>
+                <p class="section-intro" data-section-intro="missions">Humanity's journey to the Red Planet</p>
+                <div class="section-content" data-section-content="missions">
+                    <div class="fact-grid" data-fact-grid="missions">
+                        <!-- w4 will populate with MarsFact data -->
+                        <div class="placeholder-card" data-placeholder="missions-facts">
+                            <div class="placeholder-card__icon" data-placeholder-icon="missions"></div>
+                            <h3 class="placeholder-card__title">Loading mission data...</h3>
+                            <p class="placeholder-card__text">Mission information will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer id="main-footer" class="site-footer" data-footer="main">
+        <div class="container">
+            <p class="footer-text">Mars Interactive Experience</p>
+        </div>
+    </footer>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
