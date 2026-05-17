@@ -8,6 +8,10 @@ app = FastAPI(title="Mars Interactive Site")
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 
+# Include API routes
+from .routes import router as mars_router
+app.include_router(mars_router)
+
 @app.get("/")
 async def serve_index():
     return FileResponse(FRONTEND_DIR / "index.html")
