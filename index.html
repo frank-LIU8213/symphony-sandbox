@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuclear Mass &amp; Light Speed | Interactive Physics Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <h1 class="site-header__title">Nuclear Mass &amp; Light Speed</h1>
+    <p class="site-header__subtitle">An Interactive Journey into Physics</p>
+  </header>
+  
+  <main id="app" class="app-container">
+    <section id="hero" class="section section--hero">
+      <h2 class="section__title">The Nucleus &amp; The Speed of Light</h2>
+      <div class="section__content">
+        <svg id="hero-svg" class="section__svg" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+          <g id="atom-group"></g>
+          <g id="light-particles"></g>
+        </svg>
+      </div>
+    </section>
+
+    <section id="mass-energy" class="section section--simulator">
+      <h2 class="section__title">E = mc² Simulator</h2>
+      <div class="section__content">
+        <div class="controls">
+          <label for="mass-slider" class="controls__label">
+            Mass (kg): <span id="mass-value" class="controls__value">1</span>
+          </label>
+          <input type="range" id="mass-slider" class="controls__slider" min="1" max="100" value="1">
+          <div id="energy-display" class="controls__display">Energy: 0 J</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="light-speed" class="section section--visualization">
+      <h2 class="section__title">Velocity Visualization</h2>
+      <div class="section__content">
+        <div class="controls">
+          <button id="toggle-speed" class="controls__button">Toggle Light Speed</button>
+          <svg id="speed-svg" class="section__svg" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg">
+            <g id="speed-trails"></g>
+          </svg>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
