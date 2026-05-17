@@ -1,16 +1,66 @@
-[
-  {
-    "id": "overview",
-    "title": "Mars Overview",
-    "description": "The Red Planet",
-    "image_url": "/assets/img/mars_overview.jpg",
-    "facts": ["4th planet from the Sun", "Day length: 24h 37m", "Gravity: 38% of Earth"]
-  },
-  {
-    "id": "surface",
-    "title": "Surface Features",
-    "description": "Canyons, Volcanoes, and Dust Storms",
-    "image_url": "/assets/img/mars_surface.jpg",
-    "facts": ["Olympus Mons is the tallest volcano", "Valles Marineris is huge", "Dust storms can cover the planet"]
-  }
-]
+{
+  "facts": [
+    {
+      "id": "overview",
+      "title": "Mars Overview",
+      "description": "The Red Planet",
+      "image_url": "/assets/img/mars_overview.jpg",
+      "facts": ["4th planet from the Sun", "Day length: 24h 37m", "Gravity: 38% of Earth"]
+    },
+    {
+      "id": "surface",
+      "title": "Surface Features",
+      "description": "Canyons, Volcanoes, and Dust Storms",
+      "image_url": "/assets/img/mars_surface.jpg",
+      "facts": ["Olympus Mons is the tallest volcano", "Valles Marineris is huge", "Dust storms can cover the planet"]
+    },
+    {
+      "id": "atmosphere",
+      "title": "Atmosphere & Climate",
+      "description": "Thin, Cold, and Dusty",
+      "image_url": "/assets/img/mars_atmosphere.jpg",
+      "facts": ["95% CO2 atmosphere", "Average temp: -80°F (-60°C)", "Seasons like Earth but twice as long"]
+    },
+    {
+      "id": "moons",
+      "title": "Moons of Mars",
+      "description": "Phobos & Deimos",
+      "image_url": "/assets/img/mars_moons.jpg",
+      "facts": ["Phobos orbits in 7.6 hours", "Deimos is 12km wide", "Phobos will crash into Mars in 50M years"]
+    },
+    {
+      "id": "exploration",
+      "title": "Human Exploration",
+      "description": "Rovers, Landers, and Future Missions",
+      "image_url": "/assets/img/mars_exploration.jpg",
+      "facts": ["Perseverance rover collecting samples", "Ingenuity helicopter flew 72 times", "Artemis program aims for lunar gateway first"]
+    }
+  ],
+  "sounds": [
+    {
+      "id": "wind-ambient",
+      "url": "/assets/audio/wind-ambient.mp3",
+      "event": "load"
+    },
+    {
+      "id": "rover-engine",
+      "url": "/assets/audio/rover-engine.mp3",
+      "event": "click"
+    },
+    {
+      "id": "dust-storm",
+      "url": "/assets/audio/dust-storm.mp3",
+      "event": "scroll"
+    },
+    {
+      "id": "beep-signal",
+      "url": "/assets/audio/beep-signal.mp3",
+      "event": "hover"
+    },
+    {
+      "id": "launch-thrust",
+      "url": "/assets/audio/launch-thrust.mp3",
+      "event": "click"
+    }
+  ]
+}
