@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mars Interactive Explorer</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <header id="nav">
+    <nav>
+      <a href="#overview">Overview</a>
+      <a href="#orbit">Solar System</a>
+      <a href="#surface">Surface</a>
+    </nav>
+  </header>
+  <main id="app">
+    <section id="overview">
+      <h2>Mars Overview</h2>
+      <p>Discover the Red Planet</p>
+    </section>
+    <section id="orbit">
+      <h2>Solar System</h2>
+      <p>Explore Mars' Orbit</p>
+    </section>
+    <section id="surface">
+      <h2>Surface Exploration</h2>
+      <p>Walk on Martian Terrain</p>
+    </section>
+  </main>
+  <script type="module" src="js/engine.js"></script>
+  <script type="module" src="js/sections/overview.js"></script>
+  <script type="module" src="js/sections/orbit.js"></script>
+  <script type="module" src="js/sections/surface.js"></script>
+  <script type="module">
+    import { initSite } from './js/engine.js';
+    initSite();
+  </script>
+</body>
+</html>
