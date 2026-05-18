@@ -1,0 +1,106 @@
+{
+  "contract": "## Shared Types\n- `AnimationState`: `{ id: string, duration: number, keyframes: string[] }`\n- `AudioAsset`: `{ id: string, src: string, type: 'sfx' | 'ambient' }`\n- `SectionData`: `{ id: string, title: string, content: string, svgId: string, audioCue: string, highlightLayer?: string }`\n- `PlutoModelConfig`: `{ radius: number, rotationSpeed: number, layers: string[], metadata: Record<string, string> }`\n- `PlutoModelAPI`: `render(container: HTMLElement, config: PlutoModelConfig): void`, `setHighlight(layer: string): void`, `resetHighlight(): void`\n- `SectionAPI`: `renderSections(sections: SectionData[], container: HTMLElement): void`, `setupScrollObserver(): void`\n- `AudioAPI`: `initAudio(): void`, `play(id: string, volume?: number): void`, `pauseAll(id?: string): void`, `setMasterVolume(v: number): void`, `registerAudioAssets(assets: AudioAsset[]): void`\n\n## API Contract\n- `animations.js`: `registerAnimation(config: AnimationState): void`, `trigger(id: string): void`, `cleanup(): void`\n- `pluto-model.js`: `render(container: HTMLElement, config: PlutoModelConfig): void`, `setHighlight(layer: string): void`, `resetHighlight(): void`\n- `sections.js`: `renderSections(sections: SectionData[], container: HTMLElement): void`, `setupScrollObserver(): void`\n- `audio.js`: `initAudio(): void`, `play(id: string, volume?: number): void`, `pauseAll(id?: string): void`, `setMasterVolume(v: number): void`, `registerAudioAssets(assets: AudioAsset[]): void`\n- `content.js`: `loadSections(): Promise<SectionData[]>`, `loadPlutoData(): PlutoModelConfig`\n- `app.js`: `init(): Promise<void>`\n\n## Naming Conventions\n- Files: kebab-case for CSS/SVG, camelCase for JS.\n- Exports: named exports for all public APIs.\n- Types: PascalCase for interfaces/types.\n- Data IDs: kebab-case (e.g., `sfx-hover`, `pluto-core`).\n- CSS classes: BEM-like or utility-first, prefixed with `pluto-` (e.g., `pluto-section`, `pluto-model-layer`).",
+  "scaffold_files": [
+    {
+      "path": "js/types.js",
+      "content": "/** @typedef {Object} AnimationState */\n/** @property {string} id */\n/** @property {number} duration */\n/** @property {string[]} keyframes */\n\n/** @typedef {Object} AudioAsset */\n/** @property {string} id */\n/** @property {string} src */\n/** @property {'sfx'|'ambient'} type */\n\n/** @typedef {Object} SectionData */\n/** @property {string} id */\n/** @property {string} title */\n/** @property {string} content */\n/** @property {string} svgId */\n/** @property {string} audioCue */\n/** @property {string} [highlightLayer] */\n\n/** @typedef {Object} PlutoModelConfig */\n/** @property {number} radius */\n/** @property {number} rotationSpeed */\n/** @property {string[]} layers */\n/** @property {Record<string, string>} metadata */\n\nexport {};"
+    },
+    {
+      "path": "js/pluto-model.js",
+      "content": "import { PlutoModelConfig } from './types.js';\n\n/**\n * @param {HTMLElement} container\n * @param {PlutoModelConfig} config\n */\nexport function render(container, config) {\n  // TODO: Implement SVG-based interactive Pluto model rendering\n}\n\n/**\n * @param {string} layer\n */\nexport function setHighlight(layer) {\n  // TODO: Highlight a specific layer in the model\n}\n\n/**\n * @returns {void}\n */\nexport function resetHighlight() {\n  // TODO: Reset all layer highlights\n}"
+    },
+    {
+      "path": "js/sections.js",
+      "content": "import { SectionData } from './types.js';\n\n/**\n * @param {SectionData[]} sections\n * @param {HTMLElement} container\n */\nexport function renderSections(sections, container) {\n  // TODO: Render scrollable content sections\n}\n\n/**\n * @returns {void}\n */\nexport function setupScrollObserver() {\n  // TODO: Setup IntersectionObserver for scroll-triggered audio & model highlights\n}"
+    },
+    {
+      "path": "js/app.js",
+      "content": "import { initAudio, registerAudioAssets, setMasterVolume } from './audio.js';\nimport { loadSections, loadPlutoData } from './content.js';\nimport { render } from './pluto-model.js';\nimport { renderSections, setupScrollObserver } from './sections.js';\n\n/**\n * @returns {Promise<void>}\n */\nexport async function init() {\n  initAudio();\n  registerAudioAssets([\n    { id: 'sfx-hover', src: 'assets/sfx-hover.mp3', type: 'sfx' },\n    { id: 'sfx-click', src: 'assets/sfx-click.mp3', type: 'sfx' },\n    { id: 'sfx-overview', src: 'assets/sfx-overview.mp3', type: 'sfx' },\n    { id: 'sfx-structure', src: 'assets/sfx-structure.mp3', type: 'sfx' },\n    { id: 'sfx-orbit', src: 'assets/sfx-orbit.mp3', type: 'sfx' },\n    { id: 'ambient-space', src: 'assets/ambient-space.mp3', type: 'ambient' }\n  ]);\n\n  const plutoConfig = loadPlutoData();\n  const modelContainer = document.getElementById('pluto-model-container');\n  if (modelContainer) {\n    render(modelContainer, plutoConfig);\n  }\n\n  const sections = await loadSections();\n  const sectionsContainer = document.getElementById('sections-container');\n  if (sectionsContainer) {\n    renderSections(sections, sectionsContainer);\n    setupScrollObserver();\n  }\n\n  setupAudioControls();\n}\n\nfunction setupAudioControls() {\n  const volumeButton = document.getElementById('master-volume');\n  if (!volumeButton) return;\n  let isMuted = false;\n  volumeButton.addEventListener('click', () => {\n    isMuted = !isMuted;\n    if (isMuted) {\n      setMasterVolume(0);\n      volumeButton.textContent = '🔇';\n      volumeButton.setAttribute('aria-label', 'Unmute');\n    } else {\n      setMasterVolume(1);\n      volumeButton.textContent = '🔊';\n      volumeButton.setAttribute('aria-label', 'Mute');\n    }\n  });\n}\n\ndocument.addEventListener('DOMContentLoaded', init);"
+    },
+    {
+      "path": "index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Pluto Explorer</title>\n  <link rel=\"stylesheet\" href=\"css/main.css\">\n  <link rel=\"stylesheet\" href=\"css/animations.css\">\n</head>\n<body>\n  <header>\n    <h1>Pluto Explorer</h1>\n    <button id=\"master-volume\" aria-label=\"Mute\">🔊</button>\n  </header>\n  <main>\n    <section id=\"pluto-model-container\"></section>\n    <section id=\"sections-container\"></section>\n  </main>\n  <script type=\"module\" src=\"js/app.js\"></script>\n</body>\n</html>"
+    },
+    {
+      "path": "css/main.css",
+      "content": ":root {\n  --bg-color: #0b0d17;\n  --text-color: #e0e6ed;\n  --accent-color: #00d4ff;\n  --pluto-crust: #8b7355;\n  --pluto-mantle: #5c4033;\n  --pluto-core: #ff6b6b;\n}\n\nbody {\n  margin: 0;\n  background: var(--bg-color);\n  color: var(--text-color);\n  font-family: 'Inter', system-ui, sans-serif;\n  overflow-x: hidden;\n}\n\nheader {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  padding: 1rem 2rem;\n  background: rgba(11, 13, 23, 0.9);\n  backdrop-filter: blur(10px);\n  position: sticky;\n  top: 0;\n  z-index: 100;\n}\n\nmain {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  padding: 2rem;\n}\n\n#pluto-model-container {\n  width: 100%;\n  max-width: 800px;\n  height: 60vh;\n  margin-bottom: 2rem;\n}\n\n#sections-container {\n  width: 100%;\n  max-width: 800px;\n}\n\n.pluto-section {\n  padding: 2rem;\n  margin-bottom: 2rem;\n  border-left: 4px solid var(--accent-color);\n  background: rgba(255, 255, 255, 0.05);\n  border-radius: 8px;\n  opacity: 0;\n  transform: translateY(20px);\n  transition: opacity 0.6s ease, transform 0.6s ease;\n}\n\n.pluto-section.visible {\n  opacity: 1;\n  transform: translateY(0);\n}"
+    },
+    {
+      "path": "css/animations.css",
+      "content": "@keyframes pluto-rotate {\n  from { transform: rotate(0deg); }\n  to { transform: rotate(360deg); }\n}\n\n@keyframes pluto-glow {\n  0%, 100% { filter: drop-shadow(0 0 5px var(--accent-color)); }\n  50% { filter: drop-shadow(0 0 20px var(--accent-color)); }\n}\n\n@keyframes pluto-layer-highlight {\n  0%, 100% { opacity: 0.3; }\n  50% { opacity: 1; }\n}\n\n.pluto-model-svg {\n  width: 100%;\n  height: 100%;\n  animation: pluto-rotate 60s linear infinite;\n}\n\n.pluto-model-svg.anim-active {\n  animation: pluto-glow 2s ease-in-out infinite;\n}\n\n.pluto-layer {\n  transition: opacity 0.3s ease, filter 0.3s ease;\n}\n\n.pluto-layer.highlighted {\n  animation: pluto-layer-highlight 1.5s ease-in-out infinite;\n  filter: drop-shadow(0 0 10px var(--accent-color));\n}"
+    },
+    {
+      "path": "assets/pluto-model.svg",
+      "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 400\">\n  <defs>\n    <radialGradient id=\"plutoGrad\" cx=\"30%\" cy=\"30%\" r=\"70%\">\n      <stop offset=\"0%\" stop-color=\"#a08060\"/>\n      <stop offset=\"100%\" stop-color=\"#403020\"/>\n    </radialGradient>\n  </defs>\n  <circle class=\"pluto-layer pluto-layer-core\" cx=\"200\" cy=\"200\" r=\"60\" fill=\"#ff6b6b\" opacity=\"0.8\"/>\n  <circle class=\"pluto-layer pluto-layer-mantle\" cx=\"200\" cy=\"200\" r=\"120\" fill=\"#5c4033\" opacity=\"0.6\"/>\n  <circle class=\"pluto-layer pluto-layer-crust\" cx=\"200\" cy=\"200\" r=\"180\" fill=\"url(#plutoGrad)\" opacity=\"0.9\"/>\n  <circle cx=\"200\" cy=\"200\" r=\"190\" fill=\"none\" stroke=\"#00d4ff\" stroke-width=\"2\" stroke-dasharray=\"10 5\" opacity=\"0.5\"/>\n</svg>"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w0",
+      "task": "User can explore an interactive, animated 3D-style Pluto model",
+      "acceptance_criteria": [
+        "SVG model renders inside #pluto-model-container with distinct crust, mantle, and core layers",
+        "Hovering or clicking a layer triggers a highlight animation and plays a subtle sfx",
+        "Continuous rotation animation runs smoothly at 60fps",
+        "setHighlight() and resetHighlight() APIs correctly toggle layer visibility and glow effects"
+      ],
+      "files_owned": [
+        "js/pluto-model.js",
+        "js/animations.js",
+        "assets/pluto-model.svg",
+        "css/animations.css"
+      ],
+      "files_readonly": [
+        "js/types.js",
+        "js/app.js"
+      ],
+      "effort": "L",
+      "is_integrator": false
+    },
+    {
+      "id": "w1",
+      "task": "User can scroll through educational content with synchronized audio cues",
+      "acceptance_criteria": [
+        "Content sections render with fade-in/slide-up transitions on scroll",
+        "Scrolling into a section triggers the corresponding audioCue via audio.js",
+        "Scrolling into a section calls pluto-model.setHighlight() to emphasize the relevant layer",
+        "IntersectionObserver correctly handles fast scrolling without duplicate triggers"
+      ],
+      "files_owned": [
+        "js/sections.js",
+        "js/content.js",
+        "js/audio.js"
+      ],
+      "files_readonly": [
+        "js/types.js",
+        "js/app.js",
+        "js/pluto-model.js"
+      ],
+      "effort": "M",
+      "is_integrator": false
+    },
+    {
+      "id": "w2",
+      "task": "User gets a cohesive, responsive tech-feel interface with global controls",
+      "acceptance_criteria": [
+        "Layout is fully responsive across mobile, tablet, and desktop viewports",
+        "Tech-feel CSS variables and typography are applied consistently",
+        "Master volume toggle button correctly mutes/unmutes all audio via setMasterVolume()",
+        "All modules load without console errors and init() completes successfully"
+      ],
+      "files_owned": [
+        "index.html",
+        "css/main.css",
+        "js/app.js",
+        "js/types.js"
+      ],
+      "files_readonly": [
+        "js/pluto-model.js",
+        "js/sections.js",
+        "js/audio.js"
+      ],
+      "effort": "M",
+      "is_integrator": false
+    }
+  ]
+}
