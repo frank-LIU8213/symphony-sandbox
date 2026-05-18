@@ -7,15 +7,18 @@
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
+  <!-- Animated starfield layer -->
+  <div class="starfield-layer-2" aria-hidden="true"></div>
+
   <div id="app">
     <header class="pluto-header">
       <h1>Pluto</h1>
       <nav class="pluto-nav">
-        <a href="#model">Model</a>
-        <a href="#sections">Explore</a>
+        <a href="#model-section">Model</a>
+        <a href="#sections-container">Explore</a>
       </nav>
       <div class="pluto-audio-controls">
-        <button id="master-volume">🔊</button>
+        <button id="master-volume" aria-label="Mute" title="Toggle mute">🔊</button>
       </div>
     </header>
     <main id="main-container">
