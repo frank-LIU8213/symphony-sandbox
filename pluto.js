@@ -173,6 +173,10 @@ class PlutoScene {
 
         svg.appendChild(this.plutoGroup);
 
+        this.plutoGroup.addEventListener('click', () => {
+            this.showPopup("Pluto Fact", "Pluto has a heart-shaped glacier called Tombaugh Regio.");
+        });
+
         // Atmosphere glow
         const atmos = document.createElementNS(svgNS, "circle");
         atmos.setAttribute("cx", "400");
@@ -319,5 +323,22 @@ class PlutoScene {
         if (this.audio) {
             this.audio.play('ambient_space', 0.3);
         }
+    }
+
+    showPopup(title, text) {
+        if (!this.popupEl) {
+            this.popupEl = document.createElement('div');
+            this.popupEl.style.cssText = `
+                position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+                background: rgba(10, 10, 18, 0.9); border: 1px solid #00f3ff; padding: 12px 20px;
+                border-radius: 8px; color: #e0e0e0; font-family: var(--font-main);
+                opacity: 0; transition: opacity 0.3s ease; pointer-events: none; z-index: 10;
+            `;
+            this.container.appendChild(this.popupEl);
+        }
+        this.popupEl.innerHTML = `<strong>${title}</strong><br>${text}`;
+        this.popupEl.style.opacity = '1';
+        clearTimeout(this.popupTimeout);
+        this.popupTimeout = setTimeout(() => { this.popupEl.style.opacity = '0'; }, 3000);
     }
 }

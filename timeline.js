@@ -83,6 +83,16 @@ class TimelineScene {
         this.progressLine.setAttribute("filter", "url(#glow)");
         this.svg.appendChild(this.progressLine);
 
+        // Simple data chart bar
+        this.chartBar = document.createElementNS(this.svgNS, "rect");
+        this.chartBar.setAttribute("x", "100");
+        this.chartBar.setAttribute("y", "1100");
+        this.chartBar.setAttribute("width", "0");
+        this.chartBar.setAttribute("height", "20");
+        this.chartBar.setAttribute("fill", "#00f3ff");
+        this.chartBar.setAttribute("opacity", "0.8");
+        this.svg.appendChild(this.chartBar);
+
         // Events data
         this.events = [
             { year: "2006", month: "Jan", day: "19", title: "LAUNCH", desc: "New Horizons launches from Cape Canaveral.", y: 150 },
@@ -94,8 +104,36 @@ class TimelineScene {
 
         this.nodes = [];
         this.connectors = [];
+        this.cards = [];
+        this.imagePlaceholders = [];
 
         this.events.forEach((evt, i) => {
+            // Card background
+            const cardRect = document.createElementNS(this.svgNS, "rect");
+            cardRect.setAttribute("x", "300");
+            cardRect.setAttribute("y", evt.y - 30);
+            cardRect.setAttribute("width", "200");
+            cardRect.setAttribute("height", "60");
+            cardRect.setAttribute("rx", "8");
+            cardRect.setAttribute("fill", "rgba(10, 10, 18, 0.6)");
+            cardRect.setAttribute("stroke", "#334155");
+            cardRect.setAttribute("stroke-width", "1");
+            this.svg.appendChild(cardRect);
+            this.cards.push(cardRect);
+
+            // Image placeholder
+            const imgRect = document.createElementNS(this.svgNS, "rect");
+            imgRect.setAttribute("x", "430");
+            imgRect.setAttribute("y", evt.y - 20);
+            imgRect.setAttribute("width", "30");
+            imgRect.setAttribute("height", "30");
+            imgRect.setAttribute("rx", "4");
+            imgRect.setAttribute("fill", "none");
+            imgRect.setAttribute("stroke", "#475569");
+            imgRect.setAttribute("stroke-dasharray", "2 2");
+            this.svg.appendChild(imgRect);
+            this.imagePlaceholders.push(imgRect);
+
             // Connector line
             const conn = document.createElementNS(this.svgNS, "line");
             conn.setAttribute("x1", "400");
@@ -173,6 +211,9 @@ class TimelineScene {
         const currentY = 100 + (totalHeight * this.progress);
         this.progressLine.setAttribute("y2", currentY);
 
+        // Animate data chart bar
+        this.chartBar.setAttribute("width", 600 * this.progress);
+
         let activeIndex = -1;
         this.events.forEach((evt, i) => {
             const nodeProgress = (evt.y - 100) / totalHeight;
@@ -193,6 +234,20 @@ class TimelineScene {
                 node.setAttribute("stroke", "#334155");
                 conn.setAttribute("stroke", "#475569");
                 node._played = false;
+            }
+        });
+
+        // Animate cards & image placeholders
+        this.cards.forEach((card, i) => {
+            const nodeProgress = (this.events[i].y - 100) / 1000;
+            if (this.progress >= nodeProgress) {
+                card.setAttribute("stroke", "#00f3ff");
+                card.setAttribute("fill", "rgba(0, 243, 255, 0.1)");
+                this.imagePlaceholders[i].setAttribute("stroke", "#00f3ff");
+            } else {
+                card.setAttribute("stroke", "#334155");
+                card.setAttribute("fill", "rgba(10, 10, 18, 0.6)");
+                this.imagePlaceholders[i].setAttribute("stroke", "#475569");
             }
         });
 

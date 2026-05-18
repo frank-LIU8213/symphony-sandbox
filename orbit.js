@@ -13,6 +13,7 @@ class OrbitScene {
         this.lastMouseX = 0;
         this.lastMouseY = 0;
         this.plutoAngle = 0;
+        this.neptuneAngle = 0;
         this.kuiperParticles = [];
         this.infoPanel = null;
         this.hoveredObject = null;
@@ -51,6 +52,7 @@ class OrbitScene {
         this.drawOrbits();
         this.drawSun();
         this.drawPluto();
+        this.drawNeptune();
         this.setupInteraction();
         this.createInfoPanel();
     }
@@ -183,6 +185,22 @@ class OrbitScene {
         this.objectsGroup.appendChild(this.plutoGroup);
     }
 
+    drawNeptune() {
+        this.neptuneGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        this.neptuneGroup.setAttribute('class', 'interactive-object');
+        this.neptuneGroup.setAttribute('data-name', 'Neptune');
+        this.neptuneGroup.setAttribute('data-info', 'Neptune is the eighth and farthest known planet from the Sun. It has 14 moons.');
+        
+        const neptune = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        neptune.setAttribute('r', 12);
+        neptune.setAttribute('fill', '#4488ff');
+        neptune.setAttribute('stroke', '#00f3ff');
+        neptune.setAttribute('stroke-width', '1');
+        this.neptuneGroup.appendChild(neptune);
+        
+        this.objectsGroup.appendChild(this.neptuneGroup);
+    }
+
     setupInteraction() {
         const handleWheel = (e) => {
             e.preventDefault();
@@ -297,6 +315,11 @@ class OrbitScene {
         const plutoX = Math.cos(this.plutoAngle) * 120;
         const plutoY = Math.sin(this.plutoAngle) * 90;
         this.plutoGroup.setAttribute('transform', `translate(${plutoX}, ${plutoY})`);
+
+        this.neptuneAngle += 0.003 * delta * 60;
+        const neptuneX = Math.cos(this.neptuneAngle) * 150;
+        const neptuneY = Math.sin(this.neptuneAngle) * 110;
+        this.neptuneGroup.setAttribute('transform', `translate(${neptuneX}, ${neptuneY})`);
     }
 
     /**
