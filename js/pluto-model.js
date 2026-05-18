@@ -1,3 +1,5 @@
+import { play } from './audio.js';
+
 /** @type {HTMLElement | null} */
 let svgElement = null;
 /** @type {string | null} */
@@ -381,6 +383,7 @@ function setupInteractions(config) {
   const layers = svgElement.querySelectorAll('.pluto-layer');
   layers.forEach(layer => {
     layer.addEventListener('mouseenter', () => {
+      play('sfx-hover');
       const name = layer.getAttribute('data-layer');
       setHighlight(name);
     });
@@ -390,6 +393,7 @@ function setupInteractions(config) {
     });
 
     layer.addEventListener('click', () => {
+      play('sfx-click');
       const name = layer.getAttribute('data-layer');
       if (currentHighlight === name) {
         resetHighlight();

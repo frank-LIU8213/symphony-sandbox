@@ -1,5 +1,3 @@
-import { SectionData, PlutoModelConfig } from './types.js';
-
 const SECTIONS_DATA = [
   {
     id: 'overview',
