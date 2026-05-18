@@ -7,10 +7,7 @@ import { renderSections, setupScrollObserver } from './sections.js';
  * @returns {Promise<void>}
  */
 export async function init() {
-  // 1. Initialize audio system
   initAudio();
-
-  // 2. Register audio assets (required for play() to find assets)
   registerAudioAssets([
     { id: 'sfx-hover', src: 'assets/sfx-hover.mp3', type: 'sfx' },
     { id: 'sfx-click', src: 'assets/sfx-click.mp3', type: 'sfx' },
@@ -20,14 +17,12 @@ export async function init() {
     { id: 'ambient-space', src: 'assets/ambient-space.mp3', type: 'ambient' }
   ]);
 
-  // 3. Load and render the interactive Pluto model
   const plutoConfig = loadPlutoData();
   const modelContainer = document.getElementById('pluto-model-container');
   if (modelContainer) {
     render(modelContainer, plutoConfig);
   }
 
-  // 4. Load and render content sections
   const sections = await loadSections();
   const sectionsContainer = document.getElementById('sections-container');
   if (sectionsContainer) {
@@ -35,19 +30,13 @@ export async function init() {
     setupScrollObserver();
   }
 
-  // 5. Setup global audio controls
   setupAudioControls();
 }
 
-/**
- * Setup the master volume toggle button in the header.
- */
 function setupAudioControls() {
   const volumeButton = document.getElementById('master-volume');
   if (!volumeButton) return;
-
   let isMuted = false;
-
   volumeButton.addEventListener('click', () => {
     isMuted = !isMuted;
     if (isMuted) {

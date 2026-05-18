@@ -3,31 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pluto: The Dark Frontier</title>
+  <title>Pluto Explorer</title>
   <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/animations.css">
 </head>
 <body>
-  <!-- Animated starfield layer -->
-  <div class="starfield-layer-2" aria-hidden="true"></div>
-
-  <div id="app">
-    <header class="pluto-header">
-      <h1>Pluto</h1>
-      <nav class="pluto-nav">
-        <a href="#model-section">Model</a>
-        <a href="#sections-container">Explore</a>
-      </nav>
-      <div class="pluto-audio-controls">
-        <button id="master-volume" aria-label="Mute" title="Toggle mute">🔊</button>
-      </div>
-    </header>
-    <main id="main-container">
-      <section id="model-section" class="pluto-section">
-        <div id="pluto-model-container"></div>
-      </section>
-      <section id="sections-container" class="pluto-section"></section>
-    </main>
-  </div>
+  <header>
+    <h1>Pluto Explorer</h1>
+    <button id="master-volume" aria-label="Mute">🔊</button>
+  </header>
+  <main>
+    <section id="pluto-model-container"></section>
+    <section id="sections-container"></section>
+  </main>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

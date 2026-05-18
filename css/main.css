@@ -1,331 +1,63 @@
 :root {
-  --pluto-bg: #0b0d17;
-  --pluto-bg-deep: #05060a;
-  --pluto-accent: #4a90e2;
-  --pluto-accent-glow: rgba(74, 144, 226, 0.4);
-  --pluto-text: #e0e6ed;
-  --pluto-text-dim: #8a95a5;
-  --pluto-font: 'Inter', system-ui, sans-serif;
-  --pluto-header-height: 64px;
-}
-
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html {
-  scroll-behavior: smooth;
+  --bg-color: #0b0d17;
+  --text-color: #e0e6ed;
+  --accent-color: #00d4ff;
+  --pluto-crust: #8b7355;
+  --pluto-mantle: #5c4033;
+  --pluto-core: #ff6b6b;
 }
 
 body {
-  background: var(--pluto-bg);
-  color: var(--pluto-text);
-  font-family: var(--pluto-font);
+  margin: 0;
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Inter', system-ui, sans-serif;
   overflow-x: hidden;
-  min-height: 100vh;
-  position: relative;
 }
 
-/* ── Dynamic Space Background ── */
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -3;
-  background:
-    radial-gradient(ellipse at 20% 50%, rgba(74, 144, 226, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 20%, rgba(120, 80, 200, 0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 60% 80%, rgba(40, 120, 180, 0.04) 0%, transparent 55%),
-    linear-gradient(180deg, var(--pluto-bg-deep) 0%, var(--pluto-bg) 50%, var(--pluto-bg-deep) 100%);
-}
-
-/* Starfield layer 1 — distant small stars */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background-image:
-    radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.7), transparent),
-    radial-gradient(1px 1px at 25% 35%, rgba(255,255,255,0.5), transparent),
-    radial-gradient(1.2px 1.2px at 40% 10%, rgba(255,255,255,0.6), transparent),
-    radial-gradient(1px 1px at 55% 45%, rgba(255,255,255,0.4), transparent),
-    radial-gradient(1px 1px at 70% 25%, rgba(255,255,255,0.7), transparent),
-    radial-gradient(1.3px 1.3px at 85% 60%, rgba(255,255,255,0.5), transparent),
-    radial-gradient(1px 1px at 15% 70%, rgba(255,255,255,0.6), transparent),
-    radial-gradient(1px 1px at 30% 85%, rgba(255,255,255,0.4), transparent),
-    radial-gradient(1.1px 1.1px at 50% 65%, rgba(255,255,255,0.5), transparent),
-    radial-gradient(1px 1px at 65% 80%, rgba(255,255,255,0.6), transparent),
-    radial-gradient(1px 1px at 80% 5%, rgba(255,255,255,0.4), transparent),
-    radial-gradient(1.2px 1.2px at 95% 40%, rgba(255,255,255,0.7), transparent),
-    radial-gradient(1px 1px at 5% 50%, rgba(255,255,255,0.5), transparent),
-    radial-gradient(1px 1px at 45% 90%, rgba(255,255,255,0.6), transparent),
-    radial-gradient(1.4px 1.4px at 75% 55%, rgba(255,255,255,0.8), transparent),
-    radial-gradient(1px 1px at 20% 25%, rgba(255,255,255,0.4), transparent),
-    radial-gradient(1px 1px at 35% 55%, rgba(255,255,255,0.5), transparent),
-    radial-gradient(1.2px 1.2px at 60% 35%, rgba(255,255,255,0.6), transparent),
-    radial-gradient(1px 1px at 90% 75%, rgba(255,255,255,0.4), transparent),
-    radial-gradient(1px 1px at 10% 95%, rgba(255,255,255,0.7), transparent);
-  animation: starfield-drift 120s linear infinite;
-}
-
-/* Starfield layer 2 — brighter, slightly larger stars with twinkle */
-.starfield-layer-2 {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-}
-
-.starfield-layer-2::before,
-.starfield-layer-2::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(1.5px 1.5px at 12% 22%, rgba(200,220,255,0.9), transparent),
-    radial-gradient(2px 2px at 38% 48%, rgba(180,200,255,0.7), transparent),
-    radial-gradient(1.5px 1.5px at 62% 18%, rgba(220,230,255,0.8), transparent),
-    radial-gradient(2px 2px at 88% 52%, rgba(190,210,255,0.6), transparent),
-    radial-gradient(1.5px 1.5px at 28% 72%, rgba(210,225,255,0.7), transparent),
-    radial-gradient(2px 2px at 52% 88%, rgba(200,215,255,0.8), transparent),
-    radial-gradient(1.5px 1.5px at 78% 38%, rgba(220,235,255,0.6), transparent),
-    radial-gradient(2px 2px at 8% 58%, rgba(190,210,255,0.7), transparent),
-    radial-gradient(1.5px 1.5px at 48% 5%, rgba(210,225,255,0.8), transparent),
-    radial-gradient(2px 2px at 92% 82%, rgba(200,220,255,0.6), transparent),
-    radial-gradient(1.5px 1.5px at 22% 42%, rgba(220,230,255,0.7), transparent),
-    radial-gradient(2px 2px at 68% 68%, rgba(190,215,255,0.8), transparent);
-}
-
-.starfield-layer-2::before {
-  animation: star-twinkle-1 4s ease-in-out infinite alternate;
-}
-
-.starfield-layer-2::after {
-  animation: star-twinkle-2 5s ease-in-out infinite alternate;
-}
-
-@keyframes starfield-drift {
-  from { transform: translateY(0); }
-  to { transform: translateY(-20px); }
-}
-
-@keyframes star-twinkle-1 {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-
-@keyframes star-twinkle-2 {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 0.4; }
-}
-
-/* ── Header & Navigation ── */
-
-.pluto-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--pluto-header-height);
-  padding: 0 2rem;
+header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(11, 13, 23, 0.9);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
   z-index: 100;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: rgba(11, 13, 23, 0.7);
-  border-bottom: 1px solid rgba(74, 144, 226, 0.1);
 }
 
-.pluto-header h1 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  background: linear-gradient(135deg, var(--pluto-text) 0%, var(--pluto-accent) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.pluto-nav {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.pluto-nav a {
-  color: var(--pluto-text-dim);
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: color 0.2s ease, background 0.2s ease;
-}
-
-.pluto-nav a:hover {
-  color: var(--pluto-text);
-  background: rgba(74, 144, 226, 0.1);
-}
-
-/* ── Audio Controls ── */
-
-.pluto-audio-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.pluto-audio-controls button {
-  background: rgba(74, 144, 226, 0.1);
-  border: 1px solid rgba(74, 144, 226, 0.2);
-  color: var(--pluto-text);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.pluto-audio-controls button:hover {
-  background: rgba(74, 144, 226, 0.2);
-  border-color: rgba(74, 144, 226, 0.4);
-  transform: scale(1.05);
-}
-
-.pluto-audio-controls button:focus-visible {
-  outline: 2px solid var(--pluto-accent);
-  outline-offset: 2px;
-}
-
-/* ── Main Content ── */
-
-#main-container {
-  padding-top: var(--pluto-header-height);
-}
-
-.pluto-section {
-  min-height: 100vh;
-  padding: 6rem 2rem 4rem;
+main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  position: relative;
+  padding: 2rem;
 }
-
-.pluto-section:first-of-type {
-  padding-top: 2rem;
-}
-
-/* ── Pluto Model Container ── */
 
 #pluto-model-container {
   width: 100%;
-  max-width: 600px;
-  aspect-ratio: 1;
-  position: relative;
+  max-width: 800px;
+  height: 60vh;
+  margin-bottom: 2rem;
 }
-
-/* ── Sections Container ── */
 
 #sections-container {
   width: 100%;
-  max-width: 900px;
+  max-width: 800px;
 }
 
-/* ── Responsive Layout ── */
-
-@media (max-width: 768px) {
-  .pluto-header {
-    padding: 0 1rem;
-  }
-
-  .pluto-header h1 {
-    font-size: 1.1rem;
-  }
-
-  .pluto-nav a {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.8rem;
-  }
-
-  .pluto-section {
-    padding: 4rem 1.25rem 2rem;
-  }
-
-  #pluto-model-container {
-    max-width: 300px;
-  }
-
-  #sections-container {
-    padding: 0 0.5rem;
-  }
+.pluto-section {
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border-left: 4px solid var(--accent-color);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
-@media (max-width: 480px) {
-  .pluto-header {
-    padding: 0 0.75rem;
-  }
-
-  .pluto-header h1 {
-    font-size: 1rem;
-  }
-
-  .pluto-nav {
-    gap: 0;
-  }
-
-  .pluto-nav a {
-    padding: 0.35rem 0.5rem;
-    font-size: 0.75rem;
-  }
-
-  .pluto-section {
-    padding: 3rem 1rem 1.5rem;
-  }
-
-  #pluto-model-container {
-    max-width: 250px;
-  }
-}
-
-/* ── Reduced Motion ── */
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-  html {
-    scroll-behavior: auto;
-  }
-}
-
-/* ── Scrollbar Styling ── */
-
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--pluto-bg-deep);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(74, 144, 226, 0.3);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(74, 144, 226, 0.5);
+.pluto-section.visible {
+  opacity: 1;
+  transform: translateY(0);
 }

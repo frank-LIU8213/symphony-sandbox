@@ -1,0 +1,33 @@
+@keyframes pluto-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pluto-glow {
+  0%, 100% { filter: drop-shadow(0 0 5px var(--accent-color)); }
+  50% { filter: drop-shadow(0 0 20px var(--accent-color)); }
+}
+
+@keyframes pluto-layer-highlight {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.pluto-model-svg {
+  width: 100%;
+  height: 100%;
+  animation: pluto-rotate 60s linear infinite;
+}
+
+.pluto-model-svg.anim-active {
+  animation: pluto-glow 2s ease-in-out infinite;
+}
+
+.pluto-layer {
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.pluto-layer.highlighted {
+  animation: pluto-layer-highlight 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px var(--accent-color));
+}
