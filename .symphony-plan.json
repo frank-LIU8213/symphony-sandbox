@@ -1,0 +1,123 @@
+{
+  "contract": "## Shared Types\n\n- `SectionData`: `{ id: string, title: string, content: string, svgId: string, audioCue: string }` — Represents a scrollable content block with associated SVG and audio.\n- `PlutoModelConfig`: `{ radius: number, rotationSpeed: number, layers: string[], metadata: Record<string, string> }` — Configuration for the interactive 3D/SVG model of Pluto.\n- `AudioAsset`: `{ id: string, src: string, type: 'sfx' | 'ambient' }` — Metadata for sound effects and background audio.\n- `AnimationState`: `{ id: string, trigger: 'scroll' | 'click' | 'idle', duration: number, keyframes: string[] }` — Definition for SVG/CSS animations triggered by user interaction or scroll position.\n\n## API Contract (Module Interfaces)\n\n- `audioManager` (`js/audio.js`): `{ play(id: string, volume?: number): void, pauseAll(id?: string): void, setMasterVolume(v: number): void, initAudio(): void }`\n- `contentLoader` (`js/content.js`): `{ loadSections(): Promise<SectionData[]>, loadPlutoData(): PlutoModelConfig }`\n- `animationEngine` (`js/animations.js`): `{ registerAnimation(config: AnimationState): void, trigger(id: string): void, cleanup(): void }`\n- `plutoModel` (`js/pluto-model.js`): `{ render(container: HTMLElement, config: PlutoModelConfig): void, handleInteraction(event: Event): void }`\n- `sectionsRenderer` (`js/sections.js`): `{ renderSections(sections: SectionData[], container: HTMLElement): void, setupScrollObserver(): void }`\n- `app` (`js/app.js`): `{ init(): Promise<void> }` — Orchestrates module initialization and DOM readiness.\n\n## Naming Conventions\n\n- Modules: camelCase (`pluto-model.js`, `audio.js`)\n- Functions/Methods: camelCase (`loadPlutoData`, `handleInteraction`, `setupScrollObserver`)\n- CSS Classes: kebab-case with `pluto-` prefix (`pluto-section`, `pluto-model-layer`, `pluto-nav`)\n- IDs/Classes: semantic, descriptive, no generic placeholders like `div1` or `box`\n- Assets: kebab-case (`pluto-atmosphere.svg`, `pluto-data.json`)\n- Variables/Constants: UPPER_SNAKE_CASE for configuration constants, camelCase for runtime values.",
+  "scaffold_files": [
+    {
+      "path": "js/types.js",
+      "content": "/**\n * @typedef {Object} SectionData\n * @property {string} id\n * @property {string} title\n * @property {string} content\n * @property {string} svgId\n * @property {string} audioCue\n */\n\n/**\n * @typedef {Object} PlutoModelConfig\n * @property {number} radius\n * @property {number} rotationSpeed\n * @property {string[]} layers\n * @property {Record<string, string>} metadata\n */\n\n/**\n * @typedef {Object} AudioAsset\n * @property {string} id\n * @property {string} src\n * @property {'sfx' | 'ambient'} type\n */\n\n/**\n * @typedef {Object} AnimationState\n * @property {string} id\n * @property {'scroll' | 'click' | 'idle'} trigger\n * @property {number} duration\n * @property {string[]} keyframes\n */\n\nexport {};"
+    },
+    {
+      "path": "js/audio.js",
+      "content": "import { AudioAsset } from './types.js';\n\n/** @type {Map<string, HTMLAudioElement>} */\nconst audioCache = new Map();\n\n/**\n * @param {string} id\n * @param {number} [volume=1]\n */\nexport function play(id, volume = 1) {\n  // TODO: implement\n}\n\n/**\n * @param {string} [id]\n */\nexport function pauseAll(id) {\n  // TODO: implement\n}\n\n/**\n * @param {number} v\n */\nexport function setMasterVolume(v) {\n  // TODO: implement\n}\n\nexport function initAudio() {\n  // TODO: implement\n}"
+    },
+    {
+      "path": "js/content.js",
+      "content": "import { SectionData, PlutoModelConfig } from './types.js';\n\n/**\n * @returns {Promise<SectionData[]>}\n */\nexport async function loadSections() {\n  // TODO: implement\n}\n\n/**\n * @returns {PlutoModelConfig}\n */\nexport function loadPlutoData() {\n  // TODO: implement\n}"
+    },
+    {
+      "path": "js/pluto-model.js",
+      "content": "import { PlutoModelConfig } from './types.js';\n\n/**\n * @param {HTMLElement} container\n * @param {PlutoModelConfig} config\n */\nexport function render(container, config) {\n  // TODO: implement\n}\n\n/**\n * @param {Event} event\n */\nexport function handleInteraction(event) {\n  // TODO: implement\n}"
+    },
+    {
+      "path": "js/animations.js",
+      "content": "import { AnimationState } from './types.js';\n\n/**\n * @param {AnimationState} config\n */\nexport function registerAnimation(config) {\n  // TODO: implement\n}\n\n/**\n * @param {string} id\n */\nexport function trigger(id) {\n  // TODO: implement\n}\n\nexport function cleanup() {\n  // TODO: implement\n}"
+    },
+    {
+      "path": "js/sections.js",
+      "content": "import { SectionData } from './types.js';\n\n/**\n * @param {SectionData[]} sections\n * @param {HTMLElement} container\n */\nexport function renderSections(sections, container) {\n  // TODO: implement\n}\n\nexport function setupScrollObserver() {\n  // TODO: implement\n}"
+    },
+    {
+      "path": "js/app.js",
+      "content": "import { initAudio } from './audio.js';\nimport { loadSections, loadPlutoData } from './content.js';\nimport { render } from './pluto-model.js';\nimport { renderSections, setupScrollObserver } from './sections.js';\n\n/**\n * @returns {Promise<void>}\n */\nexport async function init() {\n  // TODO: implement initialization sequence\n}\n\ndocument.addEventListener('DOMContentLoaded', init);"
+    },
+    {
+      "path": "index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Pluto: The Dark Frontier</title>\n  <link rel=\"stylesheet\" href=\"css/main.css\">\n</head>\n<body>\n  <div id=\"app\">\n    <header class=\"pluto-header\">\n      <h1>Pluto</h1>\n      <nav class=\"pluto-nav\">\n        <a href=\"#model\">Model</a>\n        <a href=\"#sections\">Explore</a>\n      </nav>\n      <div class=\"pluto-audio-controls\">\n        <button id=\"master-volume\">🔊</button>\n      </div>\n    </header>\n    <main id=\"main-container\">\n      <section id=\"model-section\" class=\"pluto-section\">\n        <div id=\"pluto-model-container\"></div>\n      </section>\n      <section id=\"sections-container\" class=\"pluto-section\"></section>\n    </main>\n  </div>\n  <script type=\"module\" src=\"js/app.js\"></script>\n</body>\n</html>"
+    },
+    {
+      "path": "css/main.css",
+      "content": ":root {\n  --pluto-bg: #0b0d17;\n  --pluto-accent: #4a90e2;\n  --pluto-text: #e0e6ed;\n  --pluto-font: 'Inter', system-ui, sans-serif;\n}\n\n* { box-sizing: border-box; margin: 0; padding: 0; }\n\nbody {\n  background: var(--pluto-bg);\n  color: var(--pluto-text);\n  font-family: var(--pluto-font);\n  overflow-x: hidden;\n}\n\n.pluto-header {\n  position: fixed;\n  top: 0;\n  width: 100%;\n  padding: 1rem 2rem;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  z-index: 100;\n  backdrop-filter: blur(10px);\n}\n\n.pluto-nav a {\n  color: var(--pluto-text);\n  text-decoration: none;\n  margin: 0 1rem;\n}\n\n.pluto-section {\n  min-height: 100vh;\n  padding: 6rem 2rem 2rem;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n}\n\n#pluto-model-container {\n  width: 100%;\n  max-width: 600px;\n  aspect-ratio: 1;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  * { animation: none !important; transition: none !important; }\n}"
+    },
+    {
+      "path": "assets/pluto-data.json",
+      "content": "{\n  \"radius\": 1188.3,\n  \"rotationSpeed\": 0.0001,\n  \"layers\": [\"crust\", \"mantle\", \"core\"],\n  \"metadata\": {\n    \"diameter\": \"2376.6 km\",\n    \"mass\": \"1.303 × 10^22 kg\",\n    \"orbitalPeriod\": \"248 years\"\n  }\n}"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w0",
+      "task": "User can navigate the main page with a dynamic space background, responsive layout, and global audio controls.",
+      "acceptance_criteria": [
+        "index.html loads without errors and links to css/main.css and js/app.js",
+        "css/main.css defines CSS variables for theme, layout, and responsive breakpoints",
+        "js/audio.js exports play/pause/setMasterVolume/initAudio with correct signatures",
+        "js/types.js exports SectionData, AudioAsset, AnimationState type definitions",
+        "js/app.js initializes core modules, handles DOMContentLoaded, and sets up viewport resize listener"
+      ],
+      "files_owned": [
+        "index.html",
+        "css/main.css",
+        "js/app.js",
+        "js/audio.js",
+        "js/types.js"
+      ],
+      "files_readonly": [
+        "js/content.js",
+        "js/pluto-model.js",
+        "js/animations.js",
+        "js/sections.js",
+        "assets/pluto-data.json"
+      ],
+      "effort": "M",
+      "is_integrator": false
+    },
+    {
+      "id": "w1",
+      "task": "User can explore Pluto's basic data via an interactive SVG model with hover/click effects and related sound cues.",
+      "acceptance_criteria": [
+        "js/content.js exports loadPlutoData() returning PlutoModelConfig and loadSections() returning Promise<SectionData[]>",
+        "js/pluto-model.js exports render() and handleInteraction() with correct signatures",
+        "assets/pluto-data.json contains valid Pluto metadata matching PlutoModelConfig shape",
+        "SVG model renders inside #pluto-model-container and responds to mouse events",
+        "Clicking/hovering model parts triggers audio cues via audioManager.play()"
+      ],
+      "files_owned": [
+        "js/content.js",
+        "js/pluto-model.js",
+        "assets/pluto-data.json"
+      ],
+      "files_readonly": [
+        "js/types.js",
+        "js/audio.js",
+        "js/app.js",
+        "js/animations.js",
+        "js/sections.js"
+      ],
+      "effort": "M",
+      "is_integrator": false
+    },
+    {
+      "id": "w2",
+      "task": "User can scroll through detailed sections with scroll-triggered SVG animations and contextual audio.",
+      "acceptance_criteria": [
+        "js/animations.js exports registerAnimation() and trigger() with correct signatures",
+        "js/sections.js exports renderSections() and setupScrollObserver() with correct signatures",
+        "Scrolling triggers keyframe animations on SVG elements via animationEngine",
+        "Contextual audio plays on section entry via audioManager",
+        "Animations respect prefers-reduced-motion media query defined in css/main.css"
+      ],
+      "files_owned": [
+        "js/animations.js",
+        "js/sections.js"
+      ],
+      "files_readonly": [
+        "js/types.js",
+        "js/audio.js",
+        "js/app.js",
+        "js/content.js",
+        "js/pluto-model.js"
+      ],
+      "effort": "M",
+      "is_integrator": false
+    }
+  ]
+}
