@@ -15,7 +15,7 @@ export function play(id, volume = 1) {
   let audio = audioCache.get(id);
 
   if (!audio) {
-    const asset = audioAssets.find(a => a.id === id);
+    const asset = audioAssets.find((a) => a.id === id);
     if (!asset) {
       console.warn(`[Pluto Audio] Asset not found: ${id}`);
       return;
@@ -29,7 +29,14 @@ export function play(id, volume = 1) {
   }
 
   audio.volume = clamp(masterVolume * volume, 0, 1);
-  audio.play().catch(err => {
+
+  // Reset SFX to start from beginning; leave ambient loops running.
+  const asset = audioAssets.find((a) => a.id === id);
+  if (asset && asset.type === 'sfx') {
+    audio.currentTime = 0;
+  }
+
+  audio.play().catch((err) => {
     console.warn(`[Pluto Audio] Failed to play "${id}":`, err);
   });
 }
@@ -45,7 +52,7 @@ export function pauseAll(id) {
       audio.currentTime = 0;
     }
   } else {
-    audioCache.forEach(audio => {
+    audioCache.forEach((audio) => {
       audio.pause();
       audio.currentTime = 0;
     });
@@ -57,7 +64,7 @@ export function pauseAll(id) {
  */
 export function setMasterVolume(v) {
   masterVolume = clamp(v, 0, 1);
-  audioCache.forEach(audio => {
+  audioCache.forEach((audio) => {
     audio.volume = masterVolume;
   });
 }
@@ -78,7 +85,7 @@ export function getAudioAssets() {
 
 export function initAudio() {
   // Audio is ready to play on first user interaction.
-  // The browser requires a user gesture beforeAudioContext can be used.
+  // The browser requires a user gesture before audio can be used.
   // We set up a one-time listener to unlock audio on any click/touch.
   const unlockAudio = () => {
     document.removeEventListener('click', unlockAudio);
