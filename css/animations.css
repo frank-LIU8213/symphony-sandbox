@@ -1,33 +1,158 @@
-@keyframes pluto-rotate {
+/* === Pluto Model Animations === */
+
+/* Base SVG container */
+.pluto-model-svg {
+  width: 100%;
+  height: 100%;
+  max-width: 800px;
+  max-height: 800px;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Starfield twinkling */
+.pluto-stars circle {
+  animation: pluto-star-twinkle 3s ease-in-out infinite alternate;
+}
+
+.pluto-stars circle:nth-child(odd) {
+  animation-duration: 4s;
+  animation-delay: 0.5s;
+}
+
+.pluto-stars circle:nth-child(3n) {
+  animation-duration: 2.5s;
+  animation-delay: 1s;
+}
+
+@keyframes pluto-star-twinkle {
+  0% { opacity: 0.2; }
+  100% { opacity: 0.8; }
+}
+
+/* Orbit rings slow rotation */
+.pluto-orbits {
+  animation: pluto-orbits-rotate 120s linear infinite;
+  transform-origin: 400px 400px;
+}
+
+@keyframes pluto-orbits-rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-@keyframes pluto-glow {
-  0%, 100% { filter: drop-shadow(0 0 5px var(--accent-color)); }
-  50% { filter: drop-shadow(0 0 20px var(--accent-color)); }
+/* Layer base styles */
+.pluto-layer {
+  transition: filter 0.4s ease, opacity 0.3s ease;
+  transform-origin: 400px 400px;
 }
 
-@keyframes pluto-layer-highlight {
-  0%, 100% { opacity: 0.3; }
+/* Highlighted layer glow effect */
+.pluto-layer.highlighted {
+  filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.8));
+  opacity: 1;
+}
+
+/* Layer hover feedback */
+.pluto-layer:hover {
+  opacity: 0.9;
+}
+
+/* Craters subtle animation */
+.pluto-craters circle {
+  animation: pluto-crater-pulse 5s ease-in-out infinite;
+}
+
+.pluto-craters circle:nth-child(even) {
+  animation-delay: 1.5s;
+}
+
+@keyframes pluto-crater-pulse {
+  0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
 }
 
-.pluto-model-svg {
-  width: 100%;
-  height: 100%;
-  animation: pluto-rotate 60s linear infinite;
+/* Labels */
+.pluto-label {
+  transition: opacity 0.3s ease, fill 0.3s ease;
 }
 
-.pluto-model-svg.anim-active {
-  animation: pluto-glow 2s ease-in-out infinite;
+.pluto-label:hover {
+  fill: #ffffff;
 }
 
-.pluto-layer {
-  transition: opacity 0.3s ease, filter 0.3s ease;
+/* HUD elements */
+.pluto-hud {
+  pointer-events: none;
 }
 
-.pluto-layer.highlighted {
+/* Rotation indicator pulse */
+.pluto-hud circle {
+  animation: pluto-rot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes pluto-rot-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* === Animation Registry Styles === */
+
+/* Active animation state */
+.anim-active {
+  animation-play-state: running;
+}
+
+/* Keyframe step classes (populated by animations.js trigger) */
+.anim-active .pluto-layer {
   animation: pluto-layer-highlight 1.5s ease-in-out infinite;
-  filter: drop-shadow(0 0 10px var(--accent-color));
+}
+
+@keyframes pluto-layer-highlight {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Glow pulse for active animations */
+.pluto-model-svg.anim-active {
+  animation: pluto-glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes pluto-glow-pulse {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(0, 212, 255, 0.3)); }
+  50% { filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.6)); }
+}
+
+/* === Scroll-triggered section animations === */
+
+.pluto-section {
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border-left: 4px solid var(--accent-color, #00d4ff);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.pluto-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* === Audio cue visual feedback === */
+
+[data-anim-id] {
+  transition: all 0.3s ease;
+}
+
+[data-anim-id].anim-triggered {
+  animation: pluto-anim-flash 0.5s ease-out;
+}
+
+@keyframes pluto-anim-flash {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.3); }
+  100% { filter: brightness(1); }
 }
