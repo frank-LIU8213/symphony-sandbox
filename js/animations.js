@@ -1,5 +1,3 @@
-import { AnimationState } from './types.js';
-
 /** @type {Map<string, AnimationState>} */
 const animationRegistry = new Map();
 

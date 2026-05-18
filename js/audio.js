@@ -1,5 +1,3 @@
-import { AudioAsset } from './types.js';
-
 /** @type {Map<string, HTMLAudioElement>} */
 const audioCache = new Map();
 

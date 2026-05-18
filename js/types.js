@@ -30,4 +30,7 @@
  * @property {string[]} keyframes
  */
 
-export {};
+export const SectionData = null;
+export const PlutoModelConfig = null;
+export const AudioAsset = null;
+export const AnimationState = null;
