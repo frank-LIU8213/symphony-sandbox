@@ -1,21 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pluto Explorer</title>
+  <meta name="description" content="Pluto Explorer - 交互式冥王星科普网站">
+  <title>Pluto Explorer | 冥王星探索</title>
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/animations.css">
 </head>
 <body>
-  <header>
-    <h1>Pluto Explorer</h1>
-    <button id="master-volume" aria-label="Mute">🔊</button>
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">正在加载冥王星数据...</p>
+  </div>
+
+  <header class="pluto-header">
+    <div class="header-brand">
+      <h1>Pluto Explorer</h1>
+      <span class="header-subtitle">交互式科普探索</span>
+    </div>
+    <nav class="header-controls">
+      <button id="master-volume" class="control-btn" aria-label="切换静音">🔊</button>
+      <button id="fullscreen-btn" class="control-btn" aria-label="全屏">⛶</button>
+    </nav>
   </header>
-  <main>
-    <section id="pluto-model-container"></section>
-    <section id="sections-container"></section>
+
+  <main class="pluto-main">
+    <section id="pluto-model-container" class="pluto-model-section">
+      <!-- w0 agent will render the 3D model here -->
+    </section>
+    <section id="sections-container" class="pluto-sections">
+      <!-- w1 agent will render content sections here -->
+    </section>
   </main>
+
+  <footer class="pluto-footer">
+    <p>© 2024 Pluto Explorer | 数据来源: NASA/JPL</p>
+  </footer>
+
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
