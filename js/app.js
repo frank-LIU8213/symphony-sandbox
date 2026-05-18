@@ -10,14 +10,24 @@ export async function init() {
   // 1. Initialize audio system
   initAudio();
 
-  // 2. Load and render the interactive Pluto model
+  // 2. Register audio assets (required for play() to find assets)
+  registerAudioAssets([
+    { id: 'sfx-hover', src: 'assets/sfx-hover.mp3', type: 'sfx' },
+    { id: 'sfx-click', src: 'assets/sfx-click.mp3', type: 'sfx' },
+    { id: 'sfx-overview', src: 'assets/sfx-overview.mp3', type: 'sfx' },
+    { id: 'sfx-structure', src: 'assets/sfx-structure.mp3', type: 'sfx' },
+    { id: 'sfx-orbit', src: 'assets/sfx-orbit.mp3', type: 'sfx' },
+    { id: 'ambient-space', src: 'assets/ambient-space.mp3', type: 'ambient' }
+  ]);
+
+  // 3. Load and render the interactive Pluto model
   const plutoConfig = loadPlutoData();
   const modelContainer = document.getElementById('pluto-model-container');
   if (modelContainer) {
     render(modelContainer, plutoConfig);
   }
 
-  // 3. Load and render content sections
+  // 4. Load and render content sections
   const sections = await loadSections();
   const sectionsContainer = document.getElementById('sections-container');
   if (sectionsContainer) {
@@ -25,7 +35,7 @@ export async function init() {
     setupScrollObserver();
   }
 
-  // 4. Setup global audio controls
+  // 5. Setup global audio controls
   setupAudioControls();
 }
 
