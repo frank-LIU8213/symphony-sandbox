@@ -5,6 +5,33 @@
   "metadata": {
     "diameter": "2376.6 km",
     "mass": "1.303 × 10^22 kg",
-    "orbitalPeriod": "248 years"
+    "orbitalPeriod": "248 years",
+    "moons": "Charon, Nix, Hydra, Kerberos, Styx",
+    "discoveryYear": "1930",
+    "discoveredBy": "Clyde Tombaugh",
+    "temperature": "-230°C",
+    "atmosphere": "Trace nitrogen, methane, carbon monoxide"
+  },
+  "layerDetails": {
+    "crust": {
+      "thickness": "~100-170 km",
+      "composition": "Water ice, rock",
+      "color": "#8B9DAF"
+    },
+    "mantle": {
+      "thickness": "~170 km",
+      "composition": "Water ice, ammonia hydrate",
+      "color": "#5C7A99"
+    },
+    "core": {
+      "thickness": "~350 km",
+      "composition": "Rock, metal",
+      "color": "#3A4A5C"
+    }
+  },
+  "audioCues": {
+    "hover": "sfx-hover",
+    "click": "sfx-click",
+    "ambient": "ambient-space"
   }
 }
