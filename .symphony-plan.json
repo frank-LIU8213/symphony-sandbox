@@ -1,0 +1,113 @@
+{
+  "contract": "## Shared Types\n\n- `AudioConfig`: `{ url: string, volume: number, loop: boolean }` - Configuration for an audio asset.\n- `AnimationState`: `{ time: number, delta: number }` - State passed to animation frames.\n- `SceneInterface`: Abstract interface for all feature modules.\n  - `init(container: HTMLElement): void`\n  - `update(state: AnimationState): void`\n  - `destroy(): void`\n\n## API Contract\n\n- `AudioController` (in `engine.js`):\n  - `play(name: string, volume?: number): void`\n  - `stop(name: string): void`\n  - `setGlobalVolume(vol: number): void`\n- `AnimationLoop` (in `engine.js`):\n  - `start(callback: (state: AnimationState) => void): void`\n  - `stop(): void`\n- `Scene` implementations (in feature files):\n  - Must implement `SceneInterface`.\n  - `PlutoScene`, `OrbitScene`, `TimelineScene`.\n\n## Naming Conventions\n\n- **Classes**: `PascalCase` (e.g., `AudioController`, `PlutoScene`).\n- **Functions/Variables**: `camelCase` (e.g., `playSound`, `animationState`).\n- **CSS Classes**: `kebab-case` (e.g., `.tech-card`, `.orbit-path`).\n- **Constants**: `UPPER_SNAKE_CASE` (e.g., `DEFAULT_VOLUME`).\n- **Files**: `kebab-case` (e.g., `pluto.js`, `styles.css`).",
+  "scaffold_files": [
+    {
+      "path": "index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Pluto Science Explorer</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n</head>\n<body>\n    <nav class=\"main-nav\">\n        <a href=\"#pluto\">Pluto</a>\n        <a href=\"#orbit\">Orbit</a>\n        <a href=\"#timeline\">Mission</a>\n    </nav>\n    <main id=\"app\">\n        <section id=\"pluto\" class=\"scene-container\"></section>\n        <section id=\"orbit\" class=\"scene-container\"></section>\n        <section id=\"timeline\" class=\"scene-container\"></section>\n    </main>\n    <script src=\"engine.js\"></script>\n    <script src=\"pluto.js\"></script>\n    <script src=\"orbit.js\"></script>\n    <script src=\"timeline.js\"></script>\n    <script>\n        // Initialization glue (to be implemented by integrator or w0)\n        document.addEventListener('DOMContentLoaded', () => {\n            const engine = new AnimationLoop();\n            const audio = new AudioController();\n            // Scenes will be initialized here\n        });\n    </script>\n</body>\n</html>\n"
+    },
+    {
+      "path": "styles.css",
+      "content": ":root {\n    --bg-color: #0a0a12;\n    --text-color: #e0e0e0;\n    --accent-color: #00f3ff;\n    --secondary-color: #7000ff;\n    --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n}\n\nbody {\n    margin: 0;\n    background-color: var(--bg-color);\n    color: var(--text-color);\n    font-family: var(--font-main);\n    overflow-x: hidden;\n}\n\n.main-nav {\n    position: fixed;\n    top: 0;\n    width: 100%;\n    background: rgba(10, 10, 18, 0.9);\n    backdrop-filter: blur(10px);\n    z-index: 100;\n    display: flex;\n    justify-content: center;\n    gap: 2rem;\n    padding: 1rem;\n    border-bottom: 1px solid var(--accent-color);\n}\n\n.main-nav a {\n    color: var(--text-color);\n    text-decoration: none;\n    text-transform: uppercase;\n    letter-spacing: 2px;\n    transition: color 0.3s;\n}\n\n.main-nav a:hover {\n    color: var(--accent-color);\n}\n\n.scene-container {\n    min-height: 100vh;\n    padding: 4rem 2rem;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    justify-content: center;\n}\n"
+    },
+    {
+      "path": "engine.js",
+      "content": "/**\n * Audio controller for managing sound effects and ambient audio.\n */\nclass AudioController {\n    constructor() {\n        this.sounds = new Map();\n        this.globalVolume = 1.0;\n    }\n\n    /**\n     * Preload and register an audio asset.\n     * @param {string} name - Unique identifier for the sound.\n     * @param {AudioConfig} config - Audio configuration.\n     */\n    register(name, config) {\n        const audio = new Audio(config.url);\n        audio.loop = config.loop;\n        audio.volume = config.volume;\n        this.sounds.set(name, audio);\n    }\n\n    /**\n     * Play a registered sound.\n     * @param {string} name - Sound identifier.\n     * @param {number} [volume] - Optional override volume.\n     */\n    play(name, volume) {\n        const audio = this.sounds.get(name);\n        if (!audio) return;\n        if (volume !== undefined) audio.volume = volume;\n        audio.play().catch(e => console.warn('Audio play failed:', e));\n    }\n\n    /**\n     * Stop a registered sound.\n     * @param {string} name - Sound identifier.\n     */\n    stop(name) {\n        const audio = this.sounds.get(name);\n        if (!audio) return;\n        audio.pause();\n        audio.currentTime = 0;\n    }\n\n    /**\n     * Set global volume for all sounds.\n     * @param {number} vol - Volume between 0 and 1.\n     */\n    setGlobalVolume(vol) {\n        this.globalVolume = vol;\n        this.sounds.forEach(audio => {\n            audio.volume = vol * (audio._baseVolume || 1);\n        });\n    }\n}\n\n/**\n * Animation loop manager.\n */\nclass AnimationLoop {\n    constructor() {\n        this.running = false;\n        this.callback = null;\n        this.lastTime = 0;\n    }\n\n    /**\n     * Start the animation loop.\n     * @param {(state: AnimationState) => void} callback - Function to call each frame.\n     */\n    start(callback) {\n        if (this.running) return;\n        this.running = true;\n        this.callback = callback;\n        this.lastTime = performance.now();\n        this.tick();\n    }\n\n    stop() {\n        this.running = false;\n    }\n\n    tick() {\n        if (!this.running) return;\n        const now = performance.now();\n        const delta = (now - this.lastTime) / 1000;\n        this.lastTime = now;\n        this.callback({ time: now, delta });\n        requestAnimationFrame(() => this.tick());\n    }\n}\n"
+    },
+    {
+      "path": "pluto.js",
+      "content": "/**\n * Scene for interactive Pluto visualization.\n */\nclass PlutoScene {\n    /**\n     * Initialize the Pluto scene.\n     * @param {HTMLElement} container - Container element.\n     * @param {AudioController} audio - Shared audio controller.\n     */\n    init(container, audio) {\n        this.container = container;\n        this.audio = audio;\n        // TODO: Implement SVG creation and animation logic\n    }\n\n    /**\n     * Update frame.\n     * @param {AnimationState} state - Animation state.\n     */\n    update(state) {\n        // TODO: Update Pluto rotation and effects\n    }\n\n    /**\n     * Cleanup resources.\n     */\n    destroy() {\n        // TODO: Remove event listeners and DOM elements\n    }\n}\n"
+    },
+    {
+      "path": "orbit.js",
+      "content": "/**\n * Scene for orbital mechanics visualization.\n */\nclass OrbitScene {\n    /**\n     * Initialize the Orbit scene.\n     * @param {HTMLElement} container - Container element.\n     * @param {AudioController} audio - Shared audio controller.\n     */\n    init(container, audio) {\n        this.container = container;\n        this.audio = audio;\n        // TODO: Implement SVG creation and orbital simulation\n    }\n\n    /**\n     * Update frame.\n     * @param {AnimationState} state - Animation state.\n     */\n    update(state) {\n        // TODO: Update orbital positions\n    }\n\n    /**\n     * Cleanup resources.\n     */\n    destroy() {\n        // TODO: Remove event listeners and DOM elements\n    }\n}\n"
+    },
+    {
+      "path": "timeline.js",
+      "content": "/**\n * Scene for mission timeline visualization.\n */\nclass TimelineScene {\n    /**\n     * Initialize the Timeline scene.\n     * @param {HTMLElement} container - Container element.\n     * @param {AudioController} audio - Shared audio controller.\n     */\n    init(container, audio) {\n        this.container = container;\n        this.audio = audio;\n        // TODO: Implement timeline data and rendering\n    }\n\n    /**\n     * Update frame.\n     * @param {AnimationState} state - Animation state.\n     */\n    update(state) {\n        // TODO: Update timeline scroll effects\n    }\n\n    /**\n     * Cleanup resources.\n     */\n    destroy() {\n        // TODO: Remove event listeners and DOM elements\n    }\n}\n"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "w0",
+      "task": "User can load the site, see the tech theme, and hear ambient sounds",
+      "acceptance_criteria": [
+        "Site loads with dark theme, neon accents, and glassmorphism effects",
+        "Navigation bar is fixed at top with smooth hover effects",
+        "AudioController is instantiated and can play ambient loop",
+        "AnimationLoop is running and passing state to scenes"
+      ],
+      "files_owned": [
+        "index.html",
+        "styles.css",
+        "engine.js"
+      ],
+      "files_readonly": [
+        "pluto.js",
+        "orbit.js",
+        "timeline.js"
+      ],
+      "effort": "L",
+      "is_integrator": false
+    },
+    {
+      "id": "w1",
+      "task": "User can view and interact with the Pluto model",
+      "acceptance_criteria": [
+        "Pluto SVG is rendered with high detail and tech-style shading",
+        "Pluto rotates slowly on its axis",
+        "Clicking hotspots shows info popups with fade-in animation",
+        "Hovering over features plays subtle sound effects"
+      ],
+      "files_owned": [
+        "pluto.js"
+      ],
+      "files_readonly": [
+        "index.html",
+        "styles.css",
+        "engine.js"
+      ],
+      "effort": "M",
+      "is_integrator": false
+    },
+    {
+      "id": "w2",
+      "task": "User can explore the orbital context and Kuiper belt",
+      "acceptance_criteria": [
+        "Orbital diagram shows Pluto, Neptune, and Kuiper belt",
+        "Pluto's orbit is animated with correct eccentricity",
+        "Kuiper belt particles move with parallax effect",
+        "Interactive tooltips show orbital data (distance, period)"
+      ],
+      "files_owned": [
+        "orbit.js"
+      ],
+      "files_readonly": [
+        "index.html",
+        "styles.css",
+        "engine.js"
+      ],
+      "effort": "M",
+      "is_integrator": false
+    },
+    {
+      "id": "w3",
+      "task": "User can scroll through the New Horizons mission timeline",
+      "acceptance_criteria": [
+        "Timeline is vertical with scroll-triggered animations",
+        "Key mission events are displayed with cards and images",
+        "Data charts (e.g., distance over time) animate on scroll",
+        "Sound effects play on event reveal"
+      ],
+      "files_owned": [
+        "timeline.js"
+      ],
+      "files_readonly": [
+        "index.html",
+        "styles.css",
+        "engine.js"
+      ],
+      "effort": "M",
+      "is_integrator": false
+    }
+  ]
+}
