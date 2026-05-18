@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pluto Science Explorer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="main-nav">
+        <a href="#pluto">Pluto</a>
+        <a href="#orbit">Orbit</a>
+        <a href="#timeline">Mission</a>
+    </nav>
+    <main id="app">
+        <section id="pluto" class="scene-container"></section>
+        <section id="orbit" class="scene-container"></section>
+        <section id="timeline" class="scene-container"></section>
+    </main>
+    <script src="engine.js"></script>
+    <script src="pluto.js"></script>
+    <script src="orbit.js"></script>
+    <script src="timeline.js"></script>
+    <script>
+        // Initialization glue (to be implemented by integrator or w0)
+        document.addEventListener('DOMContentLoaded', () => {
+            const engine = new AnimationLoop();
+            const audio = new AudioController();
+            // Scenes will be initialized here
+        });
+    </script>
+</body>
+</html>
