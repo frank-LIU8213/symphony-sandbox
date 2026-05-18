@@ -7,26 +7,146 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <canvas id="starfield"></canvas>
+    <div class="scan-line"></div>
+
+    <div id="start-screen">
+        <h1>Pluto Explorer</h1>
+        <p>INITIALIZING INTERACTIVE SYSTEM...</p>
+        <button id="enter-btn">ENTER EXPLORER</button>
+    </div>
+
     <nav class="main-nav">
         <a href="#pluto">Pluto</a>
         <a href="#orbit">Orbit</a>
         <a href="#timeline">Mission</a>
     </nav>
+
     <main id="app">
-        <section id="pluto" class="scene-container"></section>
-        <section id="orbit" class="scene-container"></section>
-        <section id="timeline" class="scene-container"></section>
+        <section id="pluto" class="scene-container">
+            <div class="tech-border">
+                <h1>Pluto</h1>
+                <p>Explore the icy dwarf planet and its heart-shaped glacier.</p>
+                <!-- SVG Tech Decoration -->
+                <svg class="tech-svg" width="200" height="200" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--accent-color)" stroke-width="0.5" stroke-dasharray="4 4"/>
+                    <circle cx="50" cy="50" r="30" fill="none" stroke="var(--secondary-color)" stroke-width="0.5" stroke-dasharray="2 6"/>
+                    <path d="M50 10 L50 90 M10 50 L90 50" stroke="var(--accent-color)" stroke-width="0.2" opacity="0.5"/>
+                </svg>
+            </div>
+        </section>
+        <section id="orbit" class="scene-container">
+            <div class="tech-border">
+                <h1>Orbit</h1>
+                <p>Trace the elliptical path through the Kuiper Belt.</p>
+                <svg class="tech-svg tech-svg-pulse" width="150" height="150" viewBox="0 0 100 100">
+                    <ellipse cx="50" cy="50" rx="45" ry="20" fill="none" stroke="var(--accent-color)" stroke-width="1"/>
+                    <circle cx="50" cy="50" r="5" fill="var(--secondary-color)"/>
+                </svg>
+            </div>
+        </section>
+        <section id="timeline" class="scene-container">
+            <div class="tech-border">
+                <h1>Mission</h1>
+                <p>New Horizons: 9 years, 5 billion km to the edge of the solar system.</p>
+                <svg class="tech-svg" width="180" height="180" viewBox="0 0 100 100">
+                    <path d="M10 50 Q 50 10 90 50" fill="none" stroke="var(--accent-color)" stroke-width="1" stroke-dasharray="5 5"/>
+                    <path d="M10 50 Q 50 90 90 50" fill="none" stroke="var(--secondary-color)" stroke-width="1" stroke-dasharray="5 5"/>
+                    <circle cx="50" cy="50" r="3" fill="#fff"/>
+                </svg>
+            </div>
+        </section>
     </main>
+
     <script src="engine.js"></script>
     <script src="pluto.js"></script>
     <script src="orbit.js"></script>
     <script src="timeline.js"></script>
     <script>
-        // Initialization glue (to be implemented by integrator or w0)
+        // Starfield Background
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+
+        function initStarfield() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            stars = Array.from({ length: 150 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 1.5,
+                speed: Math.random() * 0.2 + 0.05
+            }));
+        }
+
+        function drawStarfield() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fff';
+            stars.forEach(star => {
+                ctx.globalAlpha = Math.random() * 0.5 + 0.3;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+                star.y += star.speed;
+                if (star.y > canvas.height) star.y = 0;
+            });
+            requestAnimationFrame(drawStarfield);
+        }
+
+        // Initialization
         document.addEventListener('DOMContentLoaded', () => {
+            initStarfield();
+            drawStarfield();
+
             const engine = new AnimationLoop();
             const audio = new AudioController();
-            // Scenes will be initialized here
+
+            // Initialize scenes
+            const plutoScene = new PlutoScene();
+            const orbitScene = new OrbitScene();
+            const timelineScene = new TimelineScene();
+
+            const scenes = [
+                { id: 'pluto', scene: plutoScene },
+                { id: 'orbit', scene: orbitScene },
+                { id: 'timeline', scene: timelineScene }
+            ];
+
+            scenes.forEach(({ id, scene }) => {
+                const container = document.getElementById(id);
+                scene.init(container, audio);
+            });
+
+            // Start animation loop
+            engine.start((state) => {
+                scenes.forEach(({ id, scene }) => {
+                    const container = document.getElementById(id);
+                    if (container && container.offsetParent !== null) {
+                        scene.update(state);
+                    }
+                });
+            });
+
+            // Handle start button
+            const startScreen = document.getElementById('start-screen');
+            const enterBtn = document.getElementById('enter-btn');
+
+            enterBtn.addEventListener('click', () => {
+                if (audio.ctx.state === 'suspended') {
+                    audio.ctx.resume();
+                }
+                audio.playAmbient('drone');
+                audio.playAmbient('shimmer');
+                startScreen.classList.add('hidden');
+            });
+
+            document.querySelectorAll('.main-nav a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const target = document.querySelector(link.getAttribute('href'));
+                    if (target) target.scrollIntoView({ behavior: 'smooth' });
+                });
+            });
         });
     </script>
 </body>
