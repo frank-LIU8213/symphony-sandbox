@@ -1,0 +1,725 @@
+<!-- 
+  Assumptions & Design Notes:
+  - Single-file interactive prototype for rapid iteration.
+  - Audio synthesized via Web Audio API to avoid external asset dependencies.
+  - SVG animations driven by CSS transforms & React state for performance.
+  - Theme: Deep space (#050A14), Cyan (#00F0FF), Electric Purple (#7B2CBF), Slate (#E0E0E0).
+  - Typography: Orbitron (display), Inter (body).
+  - Navigation: Step-by-step progression with smooth transitions.
+  - Anti-Slop: No generic gradients, no emoji icons, no placeholder cards. Every element serves the narrative.
+  - Fallback: If WebGL/Canvas is too heavy, pure SVG+CSS is used for maximum compatibility.
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>量子力学 · 互动科普</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050A14;
+      --surface: #0B1021;
+      --primary: #00F0FF;
+      --secondary: #7B2CBF;
+      --accent: #FF0055;
+      --text: #E0E0E0;
+      --text-dim: #8892B0;
+      --font-display: 'Orbitron', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #root { width: 100%; height: 100%; }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+    }
+
+    .header {
+      padding: 24px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      background: linear-gradient(to bottom, rgba(5,10,20,0.9), transparent);
+    }
+
+    .logo {
+      font-family: var(--font-display);
+      font-size: 18px;
+      letter-spacing: 0.15em;
+      color: var(--primary);
+      text-transform: uppercase;
+    }
+
+    .progress-bar {
+      display: flex;
+      gap: 12px;
+    }
+
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      opacity: 0.3;
+      transition: all 0.4s var(--ease-out-expo);
+    }
+
+    .step-dot.active {
+      background: var(--primary);
+      opacity: 1;
+      transform: scale(1.5);
+      box-shadow: 0 0 12px var(--primary);
+    }
+
+    .main-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 40px;
+    }
+
+    .section {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(20px);
+      pointer-events: none;
+      transition: opacity 0.6s var(--ease-out-expo), transform 0.6s var(--ease-out-expo);
+    }
+
+    .section.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 32px;
+      margin-bottom: 12px;
+      color: var(--primary);
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    .section-desc {
+      font-size: 16px;
+      color: var(--text-dim);
+      text-align: center;
+      max-width: 600px;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .interactive-area {
+      width: 100%;
+      max-width: 800px;
+      height: 400px;
+      background: var(--surface);
+      border: 1px solid rgba(0, 240, 255, 0.1);
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+
+    .controls {
+      margin-top: 24px;
+      display: flex;
+      gap: 16px;
+    }
+
+    .btn {
+      background: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 10px 24px;
+      font-family: var(--font-display);
+      font-size: 14px;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: 4px;
+    }
+
+    .btn:hover {
+      background: var(--primary);
+      color: var(--bg);
+      box-shadow: 0 0 15px var(--primary);
+    }
+
+    .btn.secondary {
+      border-color: var(--text-dim);
+      color: var(--text-dim);
+    }
+
+    .btn.secondary:hover {
+      background: var(--text-dim);
+      color: var(--bg);
+    }
+
+    /* SVG Animations */
+    .atom-core {
+      fill: var(--primary);
+      filter: drop-shadow(0 0 10px var(--primary));
+    }
+
+    .electron {
+      fill: var(--secondary);
+      animation: orbit 3s linear infinite;
+    }
+
+    .electron:nth-child(2) { animation-delay: -1s; }
+    .electron:nth-child(3) { animation-delay: -2s; }
+
+    @keyframes orbit {
+      from { transform: rotate(0deg) translateX(60px) rotate(0deg); }
+      to { transform: rotate(360deg) translateX(60px) rotate(-360deg); }
+    }
+
+    .grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .particle {
+      fill: var(--primary);
+      opacity: 0.8;
+    }
+
+    .wave-line {
+      stroke: var(--primary);
+      stroke-width: 2;
+      fill: none;
+      stroke-dasharray: 1000;
+      stroke-dashoffset: 1000;
+      animation: drawWave 2s ease-out forwards;
+    }
+
+    @keyframes drawWave {
+      to { stroke-dashoffset: 0; }
+    }
+
+    .barrier {
+      fill: rgba(123, 44, 191, 0.3);
+      stroke: var(--secondary);
+      stroke-width: 2;
+    }
+
+    .tunnel-particle {
+      fill: var(--accent);
+      filter: drop-shadow(0 0 8px var(--accent));
+    }
+
+    .entanglement-line {
+      stroke: var(--primary);
+      stroke-width: 2;
+      stroke-dasharray: 8 4;
+      animation: dash 1s linear infinite;
+    }
+
+    @keyframes dash {
+      to { stroke-dashoffset: -12; }
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 0.8s ease;
+    }
+
+    .overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .start-btn {
+      margin-top: 32px;
+      padding: 16px 48px;
+      font-size: 18px;
+    }
+
+    .status-text {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-display);
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    // Audio Engine using Web Audio API
+    class AudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.initialized = false;
+      }
+
+      init() {
+        if (this.initialized) return;
+        try {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          this.initialized = true;
+        } catch (e) {
+          console.warn("Web Audio API not supported");
+        }
+      }
+
+      playTone(freq, type = 'sine', duration = 0.3, vol = 0.1) {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+      }
+
+      playWhoosh() {
+        this.playTone(200, 'sawtooth', 0.5, 0.05);
+        setTimeout(() => this.playTone(400, 'sine', 0.3, 0.05), 100);
+      }
+
+      playClick() {
+        this.playTone(800, 'square', 0.1, 0.05);
+      }
+
+      playSuccess() {
+        this.playTone(523.25, 'sine', 0.2, 0.1);
+        setTimeout(() => this.playTone(659.25, 'sine', 0.2, 0.1), 100);
+        setTimeout(() => this.playTone(783.99, 'sine', 0.4, 0.1), 200);
+      }
+
+      playHum() {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(60, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        this.humOsc = osc;
+        this.humGain = gain;
+      }
+
+      stopHum() {
+        if (this.humOsc) {
+          this.humOsc.stop();
+          this.humOsc = null;
+        }
+      }
+    }
+
+    const audio = new AudioEngine();
+
+    // Components
+    function StartOverlay({ onStart }) {
+      return (
+        <div className="overlay" id="start-overlay">
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '48px', color: 'var(--primary)', marginBottom: '16px' }}>
+            量子力学
+          </h1>
+          <p style={{ color: 'var(--text-dim)', fontSize: '18px', letterSpacing: '0.1em' }}>
+            QUANTUM MECHANICS INTERACTIVE
+          </p>
+          <button className="btn start-btn" onClick={() => {
+            audio.init();
+            audio.playHum();
+            onStart();
+          }}>
+            开始探索
+          </button>
+        </div>
+      );
+    }
+
+    function HeroSection() {
+      return (
+        <div className="section active">
+          <div className="grid-bg"></div>
+          <svg width="200" height="200" viewBox="0 0 200 200" style={{ marginBottom: '32px' }}>
+            <circle cx="100" cy="100" r="8" className="atom-core" />
+            <ellipse cx="100" cy="100" rx="80" ry="30" fill="none" stroke="var(--primary)" strokeWidth="1" opacity="0.3" transform="rotate(0 100 100)" />
+            <ellipse cx="100" cy="100" rx="80" ry="30" fill="none" stroke="var(--secondary)" strokeWidth="1" opacity="0.3" transform="rotate(60 100 100)" />
+            <ellipse cx="100" cy="100" rx="80" ry="30" fill="none" stroke="var(--accent)" strokeWidth="1" opacity="0.3" transform="rotate(120 100 100)" />
+            <circle cx="100" cy="40" r="4" className="electron" style={{ transformOrigin: '100px 100px' }} />
+            <circle cx="100" cy="40" r="4" className="electron" style={{ transformOrigin: '100px 100px' }} />
+            <circle cx="100" cy="40" r="4" className="electron" style={{ transformOrigin: '100px 100px' }} />
+          </svg>
+          <h2 className="section-title">微观世界的规则</h2>
+          <p className="section-desc">
+            在原子与亚原子的尺度上，物理定律变得诡异而迷人。粒子可以同时处于多个状态，
+            跨越空间瞬间感应彼此，甚至穿透看似不可逾越的屏障。
+          </p>
+          <div className="controls">
+            <button className="btn" onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}>
+              进入下一节
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function WaveParticleSection() {
+      const [mode, setMode] = useState('wave');
+      const [particles, setParticles] = useState([]);
+
+      useEffect(() => {
+        if (mode === 'wave') {
+          const newParticles = Array.from({ length: 20 }, (_, i) => ({
+            id: i,
+            x: Math.random() * 100,
+            y: 50 + Math.sin(i * 0.5) * 30,
+            delay: i * 0.1
+          }));
+          setParticles(newParticles);
+        } else {
+          const newParticles = Array.from({ length: 20 }, (_, i) => ({
+            id: i,
+            x: 45 + Math.random() * 10,
+            y: 30 + (i % 2) * 40,
+            delay: i * 0.05
+          }));
+          setParticles(newParticles);
+        }
+      }, [mode]);
+
+      return (
+        <div className="section">
+          <h2 className="section-title">波粒二象性</h2>
+          <p className="section-desc">
+            光与物质既表现出粒子的离散性，又表现出波的干涉性。双缝实验揭示了量子世界的核心谜题。
+          </p>
+          <div className="interactive-area">
+            <svg width="100%" height="100%" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                  <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+              {/* Slits */}
+              <rect x="380" y="150" width="40" height="10" fill="var(--text-dim)" />
+              <rect x="380" y="240" width="40" height="10" fill="var(--text-dim)" />
+              {/* Screen */}
+              <rect x="700" y="50" width="10" height="300" fill="var(--text-dim)" opacity="0.5" />
+              
+              {particles.map(p => (
+                <circle key={p.id} cx={p.x * 8} cy={p.y} r="3" fill="var(--primary)" filter="url(#glow)" opacity="0.8">
+                  <animate attributeName="cx" from="100" to={p.x * 8} dur="1.5s" begin={`${p.delay}s`} fill="freeze" />
+                  <animate attributeName="opacity" from="0" to="0.8" dur="0.5s" begin={`${p.delay}s`} fill="freeze" />
+                </circle>
+              ))}
+              
+              {mode === 'wave' && (
+                <path d="M 100 200 Q 250 100 400 200 T 700 200" className="wave-line" />
+              )}
+            </svg>
+            <div className="status-text">模式: {mode === 'wave' ? '波动干涉' : '粒子碰撞'}</div>
+          </div>
+          <div className="controls">
+            <button className={`btn ${mode === 'wave' ? '' : 'secondary'}`} onClick={() => { setMode('wave'); audio.playClick(); }}>
+              波动模式
+            </button>
+            <button className={`btn ${mode === 'particle' ? '' : 'secondary'}`} onClick={() => { setMode('particle'); audio.playClick(); }}>
+              粒子模式
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function SuperpositionSection() {
+      const [state, setState] = useState('superposition'); // superposition, alive, dead
+      const [opacity, setOpacity] = useState(1);
+
+      const toggleState = () => {
+        if (state === 'superposition') {
+          setState(Math.random() > 0.5 ? 'alive' : 'dead');
+          audio.playClick();
+          setTimeout(() => audio.playSuccess(), 200);
+        } else {
+          setState('superposition');
+          audio.playClick();
+        }
+      };
+
+      useEffect(() => {
+        if (state === 'superposition') {
+          setOpacity(0.6);
+        } else {
+          setOpacity(1);
+        }
+      }, [state]);
+
+      return (
+        <div className="section">
+          <h2 className="section-title">叠加态</h2>
+          <p className="section-desc">
+            在测量之前，量子系统同时处于所有可能状态的叠加。观测行为迫使系统“坍缩”到一个确定状态。
+          </p>
+          <div className="interactive-area" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+            <svg width="120" height="120" viewBox="0 0 120 120" style={{ opacity, transition: 'opacity 0.5s ease' }}>
+              {state === 'superposition' ? (
+                <>
+                  <circle cx="60" cy="60" r="40" fill="none" stroke="var(--primary)" strokeWidth="2" strokeDasharray="5 5">
+                    <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="4s" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="60" cy="60" r="20" fill="var(--secondary)" opacity="0.5" />
+                  <text x="60" y="65" textAnchor="middle" fill="var(--text)" fontSize="12" fontFamily="var(--font-display)">?</text>
+                </>
+              ) : (
+                <rect x="20" y="20" width="80" height="80" rx="8" fill={state === 'alive' ? 'var(--primary)' : 'var(--accent)'} opacity="0.8" />
+              )}
+            </svg>
+            <div className="status-text">状态: {state === 'superposition' ? '叠加' : state === 'alive' ? '存活' : '死亡'}</div>
+          </div>
+          <div className="controls">
+            <button className="btn" onClick={toggleState}>
+              {state === 'superposition' ? '进行测量' : '重置叠加'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function EntanglementSection() {
+      const [spinA, setSpinA] = useState('up');
+      const [spinB, setSpinB] = useState('down');
+      const [connected, setConnected] = useState(true);
+
+      const toggleA = () => {
+        const newA = spinA === 'up' ? 'down' : 'up';
+        setSpinA(newA);
+        setSpinB(newA === 'up' ? 'down' : 'up');
+        audio.playClick();
+      };
+
+      return (
+        <div className="section">
+          <h2 className="section-title">量子纠缠</h2>
+          <p className="section-desc">
+            两个纠缠粒子无论相距多远，测量其中一个会瞬间决定另一个的状态。爱因斯坦称之为“鬼魅般的超距作用”。
+          </p>
+          <div className="interactive-area">
+            <svg width="100%" height="100%" viewBox="0 0 800 400">
+              {/* Connection Line */}
+              <line x1="200" y1="200" x2="600" y2="200" className="entanglement-line" />
+              
+              {/* Particle A */}
+              <g transform="translate(200, 200)" onClick={toggleA} style={{ cursor: 'pointer' }}>
+                <circle r="30" fill="var(--surface)" stroke="var(--primary)" strokeWidth="2" />
+                <path d="M -15 0 L 15 0 M 0 -15 L 0 15" stroke={spinA === 'up' ? 'var(--primary)' : 'var(--accent)'} strokeWidth="4" />
+                <text y="50" textAnchor="middle" fill="var(--text-dim)" fontSize="12" fontFamily="var(--font-display)">粒子 A</text>
+              </g>
+
+              {/* Particle B */}
+              <g transform="translate(600, 200)">
+                <circle r="30" fill="var(--surface)" stroke="var(--secondary)" strokeWidth="2" />
+                <path d="M -15 0 L 15 0 M 0 -15 L 0 15" stroke={spinB === 'up' ? 'var(--primary)' : 'var(--accent)'} strokeWidth="4" />
+                <text y="50" textAnchor="middle" fill="var(--text-dim)" fontSize="12" fontFamily="var(--font-display)">粒子 B</text>
+              </g>
+            </svg>
+            <div className="status-text">点击粒子 A 改变自旋方向</div>
+          </div>
+          <div className="controls">
+            <button className="btn secondary" onClick={() => { setSpinA('up'); setSpinB('down'); audio.playClick(); }}>
+              重置纠缠
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function TunnelingSection() {
+      const [particleX, setParticleX] = useState(100);
+      const [tunneled, setTunneled] = useState(false);
+      const [reflecting, setReflecting] = useState(false);
+      const [showResult, setShowResult] = useState(false);
+
+      const fireParticle = () => {
+        setTunneled(false);
+        setReflecting(false);
+        setShowResult(false);
+        setParticleX(100);
+        audio.playClick();
+
+        const interval = setInterval(() => {
+          setParticleX(prev => {
+            if (prev >= 350) {
+              clearInterval(interval);
+              // 30% chance to tunnel, 70% reflect
+              if (Math.random() < 0.3) {
+                setTunneled(true);
+                audio.playSuccess();
+              } else {
+                setReflecting(true);
+                audio.playTone(150, 'sawtooth', 0.3, 0.1);
+              }
+              setShowResult(true);
+              return prev;
+            }
+            return prev + 5;
+          });
+        }, 30);
+      };
+
+      return (
+        <div className="section">
+          <h2 className="section-title">量子隧穿</h2>
+          <p className="section-desc">
+            经典物理中，粒子无法越过能量高于自身动能的势垒。但在量子世界，粒子有一定概率直接“穿透”屏障。
+          </p>
+          <div className="interactive-area">
+            <svg width="100%" height="100%" viewBox="0 0 800 400">
+              {/* Barrier */}
+              <rect x="400" y="100" width="40" height="200" className="barrier" />
+              <text x="420" y="80" textAnchor="middle" fill="var(--text-dim)" fontSize="12" fontFamily="var(--font-display)">势垒</text>
+              
+              {/* Particle */}
+              <circle cx={particleX} cy="200" r="12" className="tunnel-particle" />
+              
+              {/* Tunneling Effect */}
+              {tunneled && (
+                <path d={`M ${particleX} 200 Q ${particleX + 50} 150 ${particleX + 100} 200`} fill="none" stroke="var(--accent)" strokeWidth="2" strokeDasharray="4 4" opacity="0.6">
+                  <animate attributeName="stroke-dashoffset" from="0" to="-16" dur="0.5s" repeatCount="indefinite" />
+                </path>
+              )}
+
+              {/* Result Text */}
+              {showResult && (
+                <text x="400" y="350" textAnchor="middle" fill={tunneled ? 'var(--primary)' : 'var(--accent)'} fontSize="16" fontFamily="var(--font-display)">
+                  {tunneled ? '隧穿成功!' : '反射'}
+                </text>
+              )}
+            </svg>
+            <div className="status-text">概率: 30% 隧穿 | 70% 反射</div>
+          </div>
+          <div className="controls">
+            <button className="btn" onClick={fireParticle}>
+              发射粒子
+            </button>
+            <button className="btn secondary" onClick={() => { setParticleX(100); setTunneled(false); setReflecting(false); setShowResult(false); audio.playClick(); }}>
+              重置
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [started, setStarted] = useState(false);
+      const [currentSection, setCurrentSection] = useState(0);
+      const sections = ['hero', 'wave', 'super', 'entangle', 'tunnel'];
+
+      useEffect(() => {
+        const handleScroll = () => {
+          if (!started) return;
+          const scrollY = window.scrollY;
+          const height = window.innerHeight;
+          const index = Math.min(Math.floor(scrollY / height), sections.length - 1);
+          setCurrentSection(index);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+      }, [started]);
+
+      if (!started) {
+        return <StartOverlay onStart={() => setStarted(true)} />;
+      }
+
+      return (
+        <div className="app-container">
+          <header className="header">
+            <div className="logo">Q-MECH</div>
+            <div className="progress-bar">
+              {sections.map((_, i) => (
+                <div key={i} className={`step-dot ${i === currentSection ? 'active' : ''}`} />
+              ))}
+            </div>
+          </header>
+
+          <main className="main-stage">
+            <div className="section active" style={{ opacity: currentSection === 0 ? 1 : 0, transform: currentSection === 0 ? 'translateY(0)' : 'translateY(20px)', pointerEvents: currentSection === 0 ? 'all' : 'none' }}>
+              <HeroSection />
+            </div>
+            <div className="section" style={{ opacity: currentSection === 1 ? 1 : 0, transform: currentSection === 1 ? 'translateY(0)' : 'translateY(20px)', pointerEvents: currentSection === 1 ? 'all' : 'none' }}>
+              <WaveParticleSection />
+            </div>
+            <div className="section" style={{ opacity: currentSection === 2 ? 1 : 0, transform: currentSection === 2 ? 'translateY(0)' : 'translateY(20px)', pointerEvents: currentSection === 2 ? 'all' : 'none' }}>
+              <SuperpositionSection />
+            </div>
+            <div className="section" style={{ opacity: currentSection === 3 ? 1 : 0, transform: currentSection === 3 ? 'translateY(0)' : 'translateY(20px)', pointerEvents: currentSection === 3 ? 'all' : 'none' }}>
+              <EntanglementSection />
+            </div>
+            <div className="section" style={{ opacity: currentSection === 4 ? 1 : 0, transform: currentSection === 4 ? 'translateY(0)' : 'translateY(20px)', pointerEvents: currentSection === 4 ? 'all' : 'none' }}>
+              <TunnelingSection />
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
